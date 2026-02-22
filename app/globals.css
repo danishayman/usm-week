@@ -2,7 +2,8 @@
 
 /* ── Design tokens ────────────────────────────────────────────────────── */
 @theme inline {
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter, system-ui, sans-serif);
+  --font-mono: var(--font-geist-mono, ui-monospace, monospace);
 }
 
 /* ── Base ─────────────────────────────────────────────────────────────── */
@@ -12,7 +13,8 @@ html {
 }
 
 body {
-  background-color: #f8fafc;
+  background: linear-gradient(160deg, #f5f0ff 0%, #ede4ff 40%, #e2d6fb 100%);
+  min-height: 100vh;
   color: #111827;
   font-family: var(--font-sans, system-ui, sans-serif);
   -webkit-font-smoothing: antialiased;
@@ -76,6 +78,21 @@ body {
 
 .delay-600 {
   animation-delay: 0.48s;
+}
+
+/* ── GitHub Corner ────────────────────────────────────────────────────── */
+.github-corner .octo-arm {
+  animation: octocat-wave 3000ms ease-in-out infinite;
+}
+
+.github-corner:hover .octo-arm {
+  animation: none;
+}
+
+@keyframes octocat-wave {
+  0%, 100% { transform: rotate(0); }
+  20%, 60% { transform: rotate(-25deg); }
+  40%, 80% { transform: rotate(10deg); }
 }
 
 /* ── Divider ─────────────────────────────────────────────────────────── */
