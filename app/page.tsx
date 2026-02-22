@@ -142,7 +142,7 @@ export default function Home() {
 
   const subLine = (() => {
     if (isPre || isPost) return SEMESTER_CONFIG.SEMESTER_LABEL;
-    return `${SEMESTER_CONFIG.SEMESTER_LABEL} is ${info.progressPercent.toFixed(1)}% complete.`;
+    return `${SEMESTER_CONFIG.SEMESTER_LABEL} is ${Number.isInteger(info.progressPercent) ? info.progressPercent.toFixed(0) : info.progressPercent.toFixed(1)}% complete.`;
   })();
 
   return (
