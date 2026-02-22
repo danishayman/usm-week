@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getSemesterInfo } from "@/lib/semester";
+import { getSemesterInfo, getCountdown, type CountdownParts } from "@/lib/semester";
 import { SEMESTER_CONFIG } from "@/config/semester";
-import ThemeToggle from "@/components/ThemeToggle";
+
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -24,104 +24,189 @@ function formatShortDate(d: Date): string {
   });
 }
 
-// ── Status content derived from semester info ─────────────────────────────────
+function pad(n: number): string {
+  return String(n).padStart(2, "0");
+}
 
-function getStatus() {
-  const date = new Date();
-  const info = getSemesterInfo(date);
+// ── Activity type → accent colour ─────────────────────────────────────────────
 
-  if (info.phase === "pre") {
-    const daysAway = Math.ceil(
-      (info.semesterStart.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    return {
-      eyebrow: "Today",
-      headline: `Semester starts in ${daysAway} day${daysAway !== 1 ? "s" : ""}`,
-      sub: `Semester begins on ${formatShortDate(info.semesterStart)}`,
-    };
-  }
+const ACTIVITY_COLOURS: Record<string, string> = {
+  teaching: "text-indigo-600",
+  revision: "text-amber-600",
+  exam: "text-rose-600",
+  break: "text-emerald-600",
+  industrial: "text-sky-600",
+};
 
-  if (info.phase === "post") {
-    return {
-      eyebrow: "Today",
-      headline: "Semester ended!",
-      sub: `Semester ended on ${formatShortDate(info.semesterEnd)}`,
-    };
-  }
+const COUNTDOWN_COLOUR: Record<string, string> = {
+  teaching: "#4f46e5",
+  revision: "#d97706",
+  exam: "#e11d48",
+  break: "#059669",
+  industrial: "#0284c7",
+};
 
-  // active
-  return {
-    eyebrow: "Today",
-    headline: `Week ${info.currentWeek} of ${info.totalWeeks}`,
-    sub: `${SEMESTER_CONFIG.SEMESTER_LABEL} · ${info.progressPercent.toFixed(1)}% complete`,
-  };
+// ── Countdown display ─────────────────────────────────────────────────────────
+
+function CountdownUnit({ value, unit, colour }: { value: number; unit: string; colour: string }) {
+  return (
+    <div className="flex flex-col items-center min-w-[52px]">
+      <span
+        className="text-4xl sm:text-5xl font-bold tabular-nums leading-none"
+        style={{ color: colour }}
+      >
+        {pad(value)}
+      </span>
+      <span className="text-xs font-semibold text-slate-400 mt-1.5 uppercase tracking-wider">
+        {unit}
+      </span>
+    </div>
+  );
+}
+
+function Separator() {
+  return (
+    <span className="text-2xl font-light text-slate-300 mb-5 select-none">
+      :
+    </span>
+  );
+}
+
+function LiveCountdown({ parts, colour }: { parts: CountdownParts; colour: string }) {
+  return (
+    <div className="flex items-end justify-center gap-3 sm:gap-5">
+      <CountdownUnit value={parts.days} unit="days" colour={colour} />
+      <Separator />
+      <CountdownUnit value={parts.hours} unit="hrs" colour={colour} />
+      <Separator />
+      <CountdownUnit value={parts.minutes} unit="min" colour={colour} />
+      <Separator />
+      <CountdownUnit value={parts.seconds} unit="sec" colour={colour} />
+    </div>
+  );
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function Home() {
-  const [, forceRender] = useState(0);
+  const [now, setNow] = useState<Date>(() => new Date());
 
+  // Tick every second for the live countdown
   useEffect(() => {
-    // Re-evaluate at midnight so the date stays accurate
-    const msToMidnight =
-      new Date(new Date().setHours(24, 0, 0, 0)).getTime() - Date.now();
-    const t = setTimeout(() => forceRender((n) => n + 1), msToMidnight);
-    return () => clearTimeout(t);
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
   }, []);
 
-  const status = getStatus();
+  const info = getSemesterInfo(now);
+  const countdown = getCountdown(info.activityEnd, now);
+
+  const activityType = info.currentActivity.type as string;
+  const accentText = ACTIVITY_COLOURS[activityType] ?? "text-indigo-500";
+  const accentHex = COUNTDOWN_COLOUR[activityType] ?? "#4f46e5";
+
+  // Derived display values
+  const isPost = info.phase === "post";
+  const isPre = info.phase === "pre";
+
+  const headlineActivity = (() => {
+    if (isPre) return "Semester hasn't started yet";
+    if (isPost) return "Semester Complete 🎓";
+    return info.currentActivity.label;
+  })();
+
+  const countdownLabel = (() => {
+    if (isPre) return `Semester begins on ${formatShortDate(info.semesterStart)}`;
+    if (isPost) return `Ended on ${formatShortDate(info.semesterEnd)}`;
+    return `${info.currentActivity.label} ends in`;
+  })();
+
+  const weekBadge = (() => {
+    if (info.currentWeek !== null) return `Week ${info.currentWeek}`;
+    return null;
+  })();
+
+  const subLine = (() => {
+    if (isPre || isPost) return SEMESTER_CONFIG.SEMESTER_LABEL;
+    return `${SEMESTER_CONFIG.SEMESTER_LABEL} · ${info.progressPercent.toFixed(1)}% complete`;
+  })();
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4 py-10">
 
-      {/* Theme toggle — fixed top-right */}
-      <div className="fixed top-4 right-4">
-        <ThemeToggle />
-      </div>
 
       {/* University label */}
-      <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-6 animate-fade-up">
+      <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-6 animate-fade-up">
         Universiti Sains Malaysia
       </p>
 
       {/* Card */}
       <div className="card w-full max-w-md p-8 flex flex-col items-center text-center gap-5 animate-fade-up delay-100">
 
-        {/* Date label */}
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        {/* Date */}
+        <p className="text-sm text-slate-500">
           Today is{" "}
-          <strong className="text-slate-800 dark:text-slate-100 font-semibold">
-            {formatDate(new Date())}
+          <strong className="text-slate-800 font-semibold">
+            {formatDate(now)}
           </strong>
         </p>
 
-        {/* Divider */}
         <div className="divider w-full" />
 
-        {/* Status */}
-        <div className="flex flex-col items-center gap-2 py-1">
-          <p className="text-xs font-semibold uppercase tracking-widest text-indigo-500 dark:text-indigo-400">
-            {status.eyebrow}
+        {/* Current activity */}
+        <div className="flex flex-col items-center gap-2 py-1 w-full">
+
+          {/* Week badge (shown only during tracked weeks) */}
+          {weekBadge && (
+            <span
+              className="inline-block text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-1"
+              style={{
+                color: accentHex,
+                background: accentHex + "18",
+              }}
+            >
+              {weekBadge}
+            </span>
+          )}
+
+          {/* Activity label eyebrow */}
+          <p className={`text-xs font-semibold uppercase tracking-widest ${accentText}`}>
+            Currently
           </p>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-slate-50 leading-tight">
-            {status.headline}
+
+          {/* Headline */}
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight">
+            {headlineActivity}
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            {status.sub}
+
+          {/* Sub-line */}
+          <p className="text-sm text-slate-500">
+            {subLine}
           </p>
         </div>
 
+        {/* Countdown */}
+        {!isPost && (
+          <>
+            <div className="divider w-full" />
+            <div className="flex flex-col items-center gap-4 w-full py-1">
+              <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+                {countdownLabel}
+              </p>
+              <LiveCountdown parts={countdown} colour={accentHex} />
+            </div>
+          </>
+        )}
+
+        {isPost && (
+          <>
+            <div className="divider w-full" />
+            <p className="text-sm text-slate-400">
+              {countdownLabel}
+            </p>
+          </>
+        )}
+
       </div>
-
-      {/* Footer */}
-      <p className="mt-6 text-xs text-slate-400 dark:text-slate-500 animate-fade-up delay-200">
-        Dates configurable in{" "}
-        <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-          /config/semester.ts
-        </code>
-      </p>
-
     </main>
   );
 }

@@ -11,24 +11,12 @@ html {
   scroll-behavior: smooth;
 }
 
-html.dark {
-  color-scheme: dark;
-}
-
 body {
   background-color: #f8fafc;
   color: #111827;
   font-family: var(--font-sans, system-ui, sans-serif);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.25s ease, color 0.25s ease;
-}
-
-html.dark body {
-  background-color: #0f172a;
-  /* slate-900 */
-  color: #f1f5f9;
-  /* slate-100 */
 }
 
 /* ── Card ─────────────────────────────────────────────────────────────── */
@@ -38,31 +26,15 @@ html.dark body {
   border-radius: 0.75rem;
 }
 
-html.dark .card {
-  background: #1e293b;
-  /* slate-800 */
-  border-color: #334155;
-  /* slate-700 */
-}
-
 /* ── Progress fill ────────────────────────────────────────────────────── */
 .progress-fill {
   background-color: #4f46e5;
   /* indigo-600 */
 }
 
-html.dark .progress-fill {
-  background-color: #6366f1;
-  /* indigo-500 */
-}
-
 /* ── Countdown number ─────────────────────────────────────────────────── */
 .countdown-number {
   color: #111827;
-}
-
-html.dark .countdown-number {
-  color: #f1f5f9;
 }
 
 /* ── Animations ─────────────────────────────────────────────────────── */
@@ -112,10 +84,6 @@ html.dark .countdown-number {
   background-color: #e5e7eb;
 }
 
-html.dark .divider {
-  background-color: #334155;
-}
-
 /* ── Scrollbar ───────────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
@@ -128,8 +96,4 @@ html.dark .divider {
 ::-webkit-scrollbar-thumb {
   background: #d1d5db;
   border-radius: 999px;
-}
-
-html.dark ::-webkit-scrollbar-thumb {
-  background: #475569;
 }
