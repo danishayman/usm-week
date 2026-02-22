@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "USM Week — Academic Dashboard",
   description: "Track USM and countdown in real time.",
+  other: {
+    "apple-mobile-web-app-title": "USM Week",
+  },
 };
 
 export default function RootLayout({
