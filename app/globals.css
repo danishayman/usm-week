@@ -13,7 +13,12 @@ html {
 }
 
 body {
-  background: linear-gradient(160deg, #f5f0ff 0%, #ede4ff 40%, #e2d6fb 100%);
+background: linear-gradient(
+  160deg,
+  #f6f3ff 0%,
+  #e6deff 50%,
+  #d4c6ff 100%
+);
   min-height: 100vh;
   color: #111827;
   font-family: var(--font-sans, system-ui, sans-serif);
