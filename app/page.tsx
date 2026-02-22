@@ -191,7 +191,7 @@ export default function Home() {
           className="object-contain"
           priority
         />
-        <p className="font-sans text-xs font-semibold uppercase tracking-widest text-slate-400">
+        <p className="font-sans text-xs font-semibold uppercase tracking-widest text-slate-800">
           Universiti Sains Malaysia
         </p>
       </div>
