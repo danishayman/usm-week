@@ -1,8 +1,6 @@
-// ─── Semester Configuration ───────────────────────────────────────────────────
+// ─── Semester Configuration ────────────────────────────────────────
 // Fill in all activity periods below.
 // Dates are ISO 8601 (YYYY-MM-DD), inclusive start and end.
-// Week numbering resets to 1 at each T&L block unless you specify
-// weekOffset: N to continue from a previous block.
 
 export type ActivityType =
   | "teaching"
@@ -20,10 +18,7 @@ export interface ActivityPeriod {
   start: string;
   /** Last day of this period (ISO 8601, inclusive) */
   end: string;
-  /**
-   * If this is a teaching block, set the week number of its FIRST week.
-   * Leave undefined for non-teaching blocks.
-   */
+  /** Optional: week number to start from for this period (resets to 1 if not specified) */
   weekStart?: number;
 }
 

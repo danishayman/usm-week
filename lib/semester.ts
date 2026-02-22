@@ -22,11 +22,7 @@ export interface SemesterInfo {
     semesterEnd: Date;
     /** 0–100 overall semester progress */
     progressPercent: number;
-    /**
-     * Current week number within the semester calendar.
-     * Based on the nearest teaching block's weekStart offset.
-     * null when in a non-week-tracked period (e.g., exam, long break).
-     */
+    /** Current week number within the semester, or null if not in a teaching block */
     currentWeek: number | null;
     /** Total teaching + revision weeks in the semester */
     totalWeeks: number;
