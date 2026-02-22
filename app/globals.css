@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+/* ── Design tokens ────────────────────────────────────────────────────── */
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────── */
+html {
+  color-scheme: light;
+  scroll-behavior: smooth;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  background-color: #f8fafc;
+  color: #111827;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+html.dark body {
+  background-color: #0f172a;
+  /* slate-900 */
+  color: #f1f5f9;
+  /* slate-100 */
+}
+
+/* ── Card ─────────────────────────────────────────────────────────────── */
+.card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+}
+
+html.dark .card {
+  background: #1e293b;
+  /* slate-800 */
+  border-color: #334155;
+  /* slate-700 */
+}
+
+/* ── Progress fill ────────────────────────────────────────────────────── */
+.progress-fill {
+  background-color: #4f46e5;
+  /* indigo-600 */
+}
+
+html.dark .progress-fill {
+  background-color: #6366f1;
+  /* indigo-500 */
+}
+
+/* ── Countdown number ─────────────────────────────────────────────────── */
+.countdown-number {
+  color: #111827;
+}
+
+html.dark .countdown-number {
+  color: #f1f5f9;
+}
+
+/* ── Animations ─────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeIn 0.4s ease-out both;
+}
+
+.delay-100 {
+  animation-delay: 0.08s;
+}
+
+.delay-200 {
+  animation-delay: 0.16s;
+}
+
+.delay-300 {
+  animation-delay: 0.24s;
+}
+
+.delay-400 {
+  animation-delay: 0.32s;
+}
+
+.delay-500 {
+  animation-delay: 0.40s;
+}
+
+.delay-600 {
+  animation-delay: 0.48s;
+}
+
+/* ── Divider ─────────────────────────────────────────────────────────── */
+.divider {
+  height: 1px;
+  background-color: #e5e7eb;
+}
+
+html.dark .divider {
+  background-color: #334155;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 999px;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
