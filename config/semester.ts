@@ -1,16 +1,13 @@
 // ─── Semester Configuration ───────────────────────────────────────────────────
 // Fill in all activity periods below.
 // Dates are ISO 8601 (YYYY-MM-DD), inclusive start and end.
-// The dashboard will automatically detect the current activity and count
-// down to when it ends. Add, remove, or edit periods freely.
-//
 // Week numbering resets to 1 at each T&L block unless you specify
 // weekOffset: N to continue from a previous block.
 
 export type ActivityType =
   | "teaching"
   | "break"
-  | "revision"
+  | "revision"  
   | "exam"
   | "industrial";
 
@@ -19,7 +16,7 @@ export interface ActivityPeriod {
   label: string;
   /** Activity category — used for colour coding */
   type: ActivityType;
-  /** First day of this period (ISO 8601) */
+  /** First day of this period  */
   start: string;
   /** Last day of this period (ISO 8601, inclusive) */
   end: string;
@@ -35,49 +32,104 @@ export const SEMESTER_CONFIG = {
   SEMESTER_LABEL: "Semester I 2025/2026",
 
   /**
+   * Optional: start date of the NEXT semester (ISO 8601).
+   * Used as the countdown target when the current semester's last activity has no successor.
+   */
+  NEXT_SEMESTER_START: "2026-04-06",
+  NEXT_SEMESTER_LABEL: "Semester II 2025/2026",
+
+  /**
    * Ordered list of activity periods that make up the semester.
-   * They must be in chronological order with no overlaps.
+   *Must be in chronological order
    */
   ACTIVITIES: [
     {
-      label: "Teaching & Learning",
+      label: "Semester I",
       type: "teaching",
       start: "2025-10-06",
-      end: "2025-11-16",
+      end: "2025-11-23",
       weekStart: 1,
     },
     {
       label: "Mid-Semester Break",
       type: "break",
-      start: "2025-11-17",
-      end: "2025-11-23",
+      start: "2025-11-24",
+      end: "2025-11-30",
+      weekStart: 8,
     },
     {
-      label: "Teaching & Learning",
+      label: "Semester I",
       type: "teaching",
-      start: "2025-11-24",
-      end: "2026-01-04",
+      start: "2025-12-01",
+      end: "2026-01-18",
       weekStart: 9,
     },
     {
       label: "Revision Week",
       type: "revision",
-      start: "2026-01-05",
-      end: "2026-01-11",
+      start: "2026-01-19",
+      end: "2026-01-25",
       weekStart: 16,
     },
     {
       label: "Examination",
       type: "exam",
-      start: "2026-01-12",
-      end: "2026-01-31",
+      start: "2026-01-26",
+      end: "2026-02-15",
+      weekStart: 17,
+    },
+    {
+      label: "Semester Break",
+      type: "break",
+      start: "2026-02-16",
+      end: "2026-03-15",
+      weekStart: 20,
+    },
+    {
+      label: "Semester II",
+      type: "teaching",
+      start: "2026-03-16",
+      end: "2026-05-03",
+      weekStart: 1,
+    },
+    {
+      label: "Mid-Semester Break",
+      type: "break",
+      start: "2026-05-04",
+      end: "2026-05-10",
+      weekStart: 8,
+    },
+    {
+      label: "Semester II",
+      type: "teaching",
+      start: "2026-05-11",
+      end: "2026-06-28",
+      weekStart: 9,
+    },
+    {
+      label: "Revision Week",
+      type: "revision",
+      start: "2026-06-29",
+      end: "2026-07-05",
+      weekStart: 16,
+    },
+    {
+      label: "Examination",
+      type: "exam",
+      start: "2026-07-08",
+      end: "2026-07-26",
+      weekStart: 17,
     },
     {
       label: "Long Semester Break",
       type: "break",
-      start: "2026-02-01",
-      end: "2026-04-05",
+      start: "2026-07-27",
+      end: "2026-09-27",
+      weekStart: 20,
     },
+
+
+
   ] satisfies ActivityPeriod[],
 } as const;
 

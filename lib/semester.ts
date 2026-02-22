@@ -10,8 +10,12 @@ export interface SemesterInfo {
     currentActivity: ActivityPeriod;
     /** Start of the current activity period */
     activityStart: Date;
-    /** End of the current activity period — countdown target */
+    /** End of the current activity period */
     activityEnd: Date;
+    /** The next activity period after the current one, or null if this is the last */
+    nextActivity: ActivityPeriod | null;
+    /** Start date of the next activity period */
+    nextActivityStart: Date | null;
     /** First day of the whole semester */
     semesterStart: Date;
     /** Last day of the whole semester */
@@ -50,6 +54,27 @@ function parseDate(iso: string, endOfDay = false): Date {
     return new Date(iso + (endOfDay ? "T23:59:59" : "T00:00:00"));
 }
 
+/**
+ * Split activities into semester groups.
+ * A new semester starts whenever weekStart resets to 1.
+ */
+function getSemesterGroups(
+    activities: readonly ActivityPeriod[]
+): ActivityPeriod[][] {
+    const groups: ActivityPeriod[][] = [];
+    let current: ActivityPeriod[] = [];
+
+    for (let i = 0; i < activities.length; i++) {
+        if (i > 0 && activities[i].weekStart === 1) {
+            groups.push(current);
+            current = [];
+        }
+        current.push(activities[i]);
+    }
+    if (current.length > 0) groups.push(current);
+    return groups;
+}
+
 // ─── Core Logic ───────────────────────────────────────────────────────────────
 
 export function getSemesterInfo(now: Date = new Date()): SemesterInfo {
@@ -75,13 +100,56 @@ export function getSemesterInfo(now: Date = new Date()): SemesterInfo {
             return acc + weeks;
         }, 0);
 
-    // ── Overall progress ─────────────────────────────────────────────────────
-    const totalMs = semesterEnd.getTime() - semesterStart.getTime();
+    // ── Per-semester progress (0 → 100 % at end of teaching week 15) ────────
+    const SEMESTER_TEACHING_WEEKS = 15;
+    const semesterGroups = getSemesterGroups(activities);
+
+    // Determine which semester group the current date belongs to
+    let currentGroup = semesterGroups[0];
+    for (const group of semesterGroups) {
+        const gStart = parseDate(group[0].start);
+        const gEnd = parseDate(group[group.length - 1].end, true);
+        if (now >= gStart && now <= gEnd) {
+            currentGroup = group;
+            break;
+        }
+    }
+
+    // Find the date when week 15 ends inside the current semester
+    let progressEndDate = parseDate(
+        currentGroup[currentGroup.length - 1].end,
+        true
+    );
+    for (const a of currentGroup) {
+        if (a.weekStart !== undefined) {
+            const bStart = parseDate(a.start);
+            const bEnd = parseDate(a.end, true);
+            const weeksInBlock = Math.round(
+                (bEnd.getTime() - bStart.getTime()) / MS_PER_WEEK
+            );
+            const lastWeek = a.weekStart + weeksInBlock - 1;
+
+            if (
+                a.weekStart <= SEMESTER_TEACHING_WEEKS &&
+                lastWeek >= SEMESTER_TEACHING_WEEKS
+            ) {
+                const weeksNeeded =
+                    SEMESTER_TEACHING_WEEKS - a.weekStart + 1;
+                progressEndDate = new Date(
+                    bStart.getTime() + weeksNeeded * MS_PER_WEEK - 1
+                );
+                break;
+            }
+        }
+    }
+
+    const progressStart = parseDate(currentGroup[0].start);
+    const totalMs = progressEndDate.getTime() - progressStart.getTime();
     const elapsedMs = Math.max(
         0,
-        Math.min(now.getTime() - semesterStart.getTime(), totalMs)
+        Math.min(now.getTime() - progressStart.getTime(), totalMs)
     );
-    const progressPercent = (elapsedMs / totalMs) * 100;
+    const progressPercent = Math.min(100, (elapsedMs / totalMs) * 100);
 
     // ── Find current activity ────────────────────────────────────────────────
     // If today falls inside a period, use it.
@@ -146,11 +214,21 @@ export function getSemesterInfo(now: Date = new Date()): SemesterInfo {
         currentWeek = null;
     }
 
+    // ── Next activity ─────────────────────────────────────────────────────────
+    const matchedIndex = activities.indexOf(matched);
+    const nextActivity =
+        matchedIndex >= 0 && matchedIndex < activities.length - 1
+            ? activities[matchedIndex + 1]
+            : null;
+    const nextActivityStart = nextActivity ? parseDate(nextActivity.start) : null;
+
     return {
         phase,
         currentActivity: matched,
         activityStart,
         activityEnd,
+        nextActivity,
+        nextActivityStart,
         semesterStart,
         semesterEnd,
         progressPercent,
