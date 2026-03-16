@@ -24,7 +24,7 @@ export interface ActivityPeriod {
 
 export const SEMESTER_CONFIG = {
   /** Label shown for the overall semester */
-  SEMESTER_LABEL: "Semester I 2025/2026",
+  SEMESTER_LABEL: "Semester II 2025/2026",
 
   /**
    * Optional: start date of the NEXT semester (ISO 8601).

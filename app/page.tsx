@@ -140,9 +140,15 @@ export default function Home() {
     return null;
   })();
 
+  const sessionLabel = SEMESTER_CONFIG.SEMESTER_LABEL.match(/\b\d{4}\/\d{4}\b/)?.[0];
+  const semesterProgressLabel =
+    sessionLabel && !info.semesterLabel.includes(sessionLabel)
+      ? `${info.semesterLabel} ${sessionLabel}`
+      : info.semesterLabel;
+
   const subLine = (() => {
-    if (isPre || isPost) return SEMESTER_CONFIG.SEMESTER_LABEL;
-    return `${SEMESTER_CONFIG.SEMESTER_LABEL} is ${Number.isInteger(info.progressPercent) ? info.progressPercent.toFixed(0) : info.progressPercent.toFixed(1)}% complete.`;
+    if (isPre || isPost) return semesterProgressLabel;
+    return `${semesterProgressLabel} is ${Number.isInteger(info.progressPercent) ? info.progressPercent.toFixed(0) : info.progressPercent.toFixed(1)}% complete.`;
   })();
 
   return (

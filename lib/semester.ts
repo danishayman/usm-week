@@ -26,6 +26,8 @@ export interface SemesterInfo {
     currentWeek: number | null;
     /** Total teaching + revision weeks in the semester */
     totalWeeks: number;
+    /** Label of the semester group that contains the current date */
+    semesterLabel: string;
 }
 
 export interface CountdownParts {
@@ -100,7 +102,8 @@ export function getSemesterInfo(now: Date = new Date()): SemesterInfo {
     const SEMESTER_TEACHING_WEEKS = 15;
     const semesterGroups = getSemesterGroups(activities);
 
-    // Determine which semester group the current date belongs to
+    // Determine which semester group the current date belongs to.
+    // If outside all groups, pick the closest one (first for pre, last for post).
     let currentGroup = semesterGroups[0];
     for (const group of semesterGroups) {
         const gStart = parseDate(group[0].start);
@@ -110,6 +113,13 @@ export function getSemesterInfo(now: Date = new Date()): SemesterInfo {
             break;
         }
     }
+    if (now > parseDate(semesterGroups[semesterGroups.length - 1][semesterGroups[semesterGroups.length - 1].length - 1].end, true)) {
+        currentGroup = semesterGroups[semesterGroups.length - 1];
+    }
+
+    const semesterLabel =
+        currentGroup.find((a) => /^Semester\b/i.test(a.label))?.label ??
+        SEMESTER_CONFIG.SEMESTER_LABEL;
 
     // Find the date when week 15 ends inside the current semester
     let progressEndDate = parseDate(
@@ -230,6 +240,7 @@ export function getSemesterInfo(now: Date = new Date()): SemesterInfo {
         progressPercent,
         currentWeek,
         totalWeeks,
+        semesterLabel,
     };
 }
 
