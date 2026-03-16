@@ -145,10 +145,11 @@ export default function Home() {
     sessionLabel && !info.semesterLabel.includes(sessionLabel)
       ? `${info.semesterLabel} ${sessionLabel}`
       : info.semesterLabel;
+  const progressPercent = Math.max(0, Math.min(100, info.progressPercent));
 
   const subLine = (() => {
     if (isPre || isPost) return semesterProgressLabel;
-    return `${semesterProgressLabel} is ${Number.isInteger(info.progressPercent) ? info.progressPercent.toFixed(0) : info.progressPercent.toFixed(1)}% complete.`;
+    return `${semesterProgressLabel} is ${Number.isInteger(progressPercent) ? progressPercent.toFixed(0) : progressPercent.toFixed(1)}% complete.`;
   })();
 
   return (
@@ -243,14 +244,13 @@ export default function Home() {
                 style={{
                   background: "#000",
                   border: "3px solid #e2e8f0",
-                  padding: "3px",
                   borderRadius: "999px",
                 }}
               >
                 <div
                   suppressHydrationWarning
                   style={{
-                    width: `${info.progressPercent}%`,
+                    width: `${progressPercent}%`,
                     background: "#00ff00",
                     height: "22px",
                     borderRadius: "999px",
