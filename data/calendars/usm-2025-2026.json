@@ -1,0 +1,149 @@
+{
+  "institution": "Universiti Sains Malaysia",
+  "timezone": "Asia/Kuala_Lumpur",
+  "academicYear": "2025-2026",
+  "nextAcademicYearStart": "2026-10-05",
+  "terms": [
+    {
+      "id": "sem-1",
+      "label": "Semester I",
+      "startDate": "2025-10-06",
+      "endDate": "2026-03-15"
+    },
+    {
+      "id": "sem-2",
+      "label": "Semester II",
+      "startDate": "2026-03-16",
+      "endDate": "2026-09-27"
+    }
+  ],
+  "periods": [
+    {
+      "id": "sem1-teaching-01",
+      "termId": "sem-1",
+      "label": "Semester I",
+      "type": "teaching",
+      "startDate": "2025-10-06",
+      "endDate": "2025-11-23",
+      "weekStart": 1,
+      "countsTowardProgress": true
+    },
+    {
+      "id": "sem1-mid-break",
+      "termId": "sem-1",
+      "label": "Mid-Semester Break",
+      "type": "break",
+      "startDate": "2025-11-24",
+      "endDate": "2025-11-30",
+      "weekStart": 8,
+      "countsTowardProgress": false
+    },
+    {
+      "id": "sem1-teaching-02",
+      "termId": "sem-1",
+      "label": "Semester I",
+      "type": "teaching",
+      "startDate": "2025-12-01",
+      "endDate": "2026-01-18",
+      "weekStart": 9,
+      "countsTowardProgress": true
+    },
+    {
+      "id": "sem1-revision",
+      "termId": "sem-1",
+      "label": "Revision Week",
+      "type": "revision",
+      "startDate": "2026-01-19",
+      "endDate": "2026-01-25",
+      "weekStart": 16,
+      "countsTowardProgress": false
+    },
+    {
+      "id": "sem1-exam",
+      "termId": "sem-1",
+      "label": "Examination",
+      "type": "exam",
+      "startDate": "2026-01-26",
+      "endDate": "2026-02-15",
+      "weekStart": 17,
+      "countsTowardProgress": false
+    },
+    {
+      "id": "sem1-term-break",
+      "termId": "sem-1",
+      "label": "Semester Break",
+      "type": "break",
+      "startDate": "2026-02-16",
+      "endDate": "2026-03-15",
+      "weekStart": 20,
+      "countsTowardProgress": false
+    },
+    {
+      "id": "sem2-teaching-01",
+      "termId": "sem-2",
+      "label": "Semester II",
+      "type": "teaching",
+      "startDate": "2026-03-16",
+      "endDate": "2026-05-03",
+      "weekStart": 1,
+      "countsTowardProgress": true
+    },
+    {
+      "id": "sem2-mid-break",
+      "termId": "sem-2",
+      "label": "Mid-Semester Break",
+      "type": "break",
+      "startDate": "2026-05-04",
+      "endDate": "2026-05-10",
+      "weekStart": 8,
+      "countsTowardProgress": false
+    },
+    {
+      "id": "sem2-teaching-02",
+      "termId": "sem-2",
+      "label": "Semester II",
+      "type": "teaching",
+      "startDate": "2026-05-11",
+      "endDate": "2026-06-28",
+      "weekStart": 9,
+      "countsTowardProgress": true
+    },
+    {
+      "id": "sem2-revision",
+      "termId": "sem-2",
+      "label": "Revision Week",
+      "type": "revision",
+      "startDate": "2026-06-29",
+      "endDate": "2026-07-05",
+      "weekStart": 16,
+      "countsTowardProgress": false
+    },
+    {
+      "id": "sem2-pre-exam-break",
+      "termId": "sem-2",
+      "label": "Exam Preparation Break",
+      "type": "break",
+      "startDate": "2026-07-06",
+      "endDate": "2026-07-07",
+      "countsTowardProgress": false
+    },
+    {
+      "id": "sem2-exam",
+      "termId": "sem-2",
+      "label": "Examination",
+      "type": "exam",
+      "startDate": "2026-07-08",
+      "endDate": "2026-07-26",
+      "countsTowardProgress": false
+    },
+    {
+      "id": "sem2-long-break",
+      "termId": "sem-2",
+      "label": "Long Semester Break",
+      "type": "break",
+      "startDate": "2026-07-27",
+      "endDate": "2026-09-27",
+      "countsTowardProgress": false
+    }
+  ]
+}

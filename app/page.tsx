@@ -2,8 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { getSemesterInfo, getCountdown, type CountdownParts } from "@/lib/semester";
-import { SEMESTER_CONFIG } from "@/config/semester";
+import {
+  ACTIVITY_TYPE_METADATA,
+  FALLBACK_ACTIVITY_TYPE_META,
+  getCalendarCountdownTarget,
+  getCalendarInfo,
+  getCountdown,
+  getDefaultCalendar,
+  type CountdownParts,
+} from "@/lib/semester";
 
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -29,23 +36,7 @@ function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
 
-// ── Activity type → accent colour ─────────────────────────────────────────────
-
-const ACTIVITY_COLOURS: Record<string, string> = {
-  teaching: "text-indigo-600",
-  revision: "text-amber-600",
-  exam: "text-rose-600",
-  break: "text-purple-800",
-  industrial: "text-sky-600",
-};
-
-const COUNTDOWN_COLOUR: Record<string, string> = {
-  teaching: "#4f46e5",
-  revision: "#d97706",
-  exam: "#e11d48",
-  break: "#3D007A",
-  industrial: "#0284c7",
-};
+const CALENDAR = getDefaultCalendar();
 
 // ── Countdown display ─────────────────────────────────────────────────────────
 
@@ -102,19 +93,15 @@ export default function Home() {
   // Render nothing until mounted on client
   if (!now) return null;
 
-  const info = getSemesterInfo(now);
-  // Count down to when the NEXT activity begins.
-  // If there's no next activity, fall back to NEXT_SEMESTER_START.
-  const nextSemStart = SEMESTER_CONFIG.NEXT_SEMESTER_START
-    ? new Date(SEMESTER_CONFIG.NEXT_SEMESTER_START + "T00:00:00")
-    : null;
-  const countdownTarget =
-    info.nextActivityStart ?? nextSemStart ?? info.activityEnd;
+  const info = getCalendarInfo(CALENDAR, now);
+  const countdownTarget = getCalendarCountdownTarget(CALENDAR, info);
   const countdown = getCountdown(countdownTarget, now);
 
-  const activityType = info.currentActivity.type as string;
-  const accentText = ACTIVITY_COLOURS[activityType] ?? "text-indigo-500";
-  const accentHex = COUNTDOWN_COLOUR[activityType] ?? "#4f46e5";
+  const activityType = info.currentPeriod.type;
+  const activityMeta =
+    ACTIVITY_TYPE_METADATA[activityType] ?? FALLBACK_ACTIVITY_TYPE_META;
+  const accentText = activityMeta.accentTextClass;
+  const accentHex = activityMeta.countdownColor;
 
   // Derived display values
   const isPost = info.phase === "post";
@@ -123,16 +110,15 @@ export default function Home() {
   const headlineActivity = (() => {
     if (isPre) return "Semester hasn't started yet";
     if (isPost) return "Semester Complete 🎓";
-    return info.currentActivity.label;
+    return info.currentPeriod.label;
   })();
 
   const countdownLabel = (() => {
-    if (isPre) return `Semester begins on ${formatShortDate(info.semesterStart)}`;
-    if (isPost) return `Ended on ${formatShortDate(info.semesterEnd)}`;
-    if (info.nextActivity) return `${info.nextActivity.label} starts in`;
-    if (SEMESTER_CONFIG.NEXT_SEMESTER_START)
-      return `${SEMESTER_CONFIG.NEXT_SEMESTER_LABEL} starts in`;
-    return `${info.currentActivity.label} ends in`;
+    if (isPre) return `Semester begins on ${formatShortDate(info.calendarStart)}`;
+    if (isPost) return `Ended on ${formatShortDate(info.calendarEnd)}`;
+    if (info.nextPeriod) return `${info.nextPeriod.label} starts in`;
+    if (CALENDAR.nextAcademicYearStart) return "Next academic year starts in";
+    return `${info.currentPeriod.label} ends in`;
   })();
 
   const weekBadge = (() => {
@@ -140,11 +126,11 @@ export default function Home() {
     return null;
   })();
 
-  const sessionLabel = SEMESTER_CONFIG.SEMESTER_LABEL.match(/\b\d{4}\/\d{4}\b/)?.[0];
+  const sessionLabel = CALENDAR.academicYear.replace("-", "/");
   const semesterProgressLabel =
-    sessionLabel && !info.semesterLabel.includes(sessionLabel)
-      ? `${info.semesterLabel} ${sessionLabel}`
-      : info.semesterLabel;
+    sessionLabel && !info.termLabel.includes(sessionLabel)
+      ? `${info.termLabel} ${sessionLabel}`
+      : info.termLabel;
   const progressPercent = Math.max(0, Math.min(100, info.progressPercent));
 
   const subLine = (() => {

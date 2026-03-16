@@ -18,6 +18,18 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+## Calendar Data
+
+Academic calendar data is versioned in JSON files:
+
+- `data/calendars/usm-2025-2026.json`
+
+The app validates calendar files at load time using a strict schema. Run tests before merging date updates:
+
+```bash
+npm run test
+```
+
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More
