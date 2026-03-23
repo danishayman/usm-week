@@ -7,8 +7,8 @@ export interface ActivityTypeMeta {
 
 export const ACTIVITY_TYPE_METADATA: Record<ActivityType, ActivityTypeMeta> = {
   teaching: {
-    accentTextClass: "text-indigo-600",
-    countdownColor: "#4f46e5",
+    accentTextClass: "text-purple-950",
+    countdownColor: "#3b0764",
   },
   revision: {
     accentTextClass: "text-amber-600",
@@ -29,6 +29,6 @@ export const ACTIVITY_TYPE_METADATA: Record<ActivityType, ActivityTypeMeta> = {
 };
 
 export const FALLBACK_ACTIVITY_TYPE_META: ActivityTypeMeta = {
-  accentTextClass: "text-indigo-500",
-  countdownColor: "#4f46e5",
+  accentTextClass: "text-purple-950",
+  countdownColor: "#3b0764",
 };
