@@ -209,18 +209,13 @@ export default function Home() {
           <p
             className={`font-sans text-lg sm:text-xl font-bold uppercase tracking-widest ${accentText}`}
           >
-            {weekBadge ?? "Currently"}
+            {headlineActivity}
           </p>
 
           {/* Headline */}
           <h1 className="font-sans text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight tracking-tight">
-            {headlineActivity}
+            {weekBadge ?? "Currently"}
           </h1>
-
-          {/* Sub-line */}
-          <p className="font-mono text-xs sm:text-sm text-slate-500 whitespace-nowrap">
-            {subLine}
-          </p>
 
           {/* Retro progress bar */}
           {!isPre && !isPost && (
@@ -229,7 +224,7 @@ export default function Home() {
                 className="w-full rounded-full overflow-hidden"
                 style={{
                   background: "#000",
-                  border: "3px solid #e2e8f0",
+                  border: "3px solid #000",
                   borderRadius: "999px",
                 }}
               >
@@ -246,6 +241,11 @@ export default function Home() {
               </div>
             </div>
           )}
+
+          {/* Sub-line */}
+          <p className="font-mono text-xs sm:text-sm text-slate-500 whitespace-nowrap">
+            {subLine}
+          </p>
         </div>
 
         {/* Countdown */}
