@@ -218,7 +218,7 @@ export default function Home() {
           </h1>
 
           {/* Sub-line */}
-          <p className="font-mono text-sm text-slate-500">
+          <p className="font-mono text-xs sm:text-sm text-slate-500 whitespace-nowrap">
             {subLine}
           </p>
 
