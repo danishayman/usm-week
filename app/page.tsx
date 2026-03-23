@@ -270,6 +270,17 @@ export default function Home() {
           </>
         )}
 
+        <div className="divider w-full" />
+        <a
+          href="https://bpa.usm.my/index.php/kalendar-akademik"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-sans text-sm font-semibold text-sky-700 underline decoration-2 underline-offset-4 transition-colors hover:text-sky-900 hover:decoration-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 rounded-sm"
+          aria-label="View USM Academic Calendar"
+        >
+          USM Academic Calendar
+        </a>
+
       </div>
     </main>
   );
