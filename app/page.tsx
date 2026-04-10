@@ -127,6 +127,11 @@ export default function Home() {
         pixelRatio: Math.max(2, window.devicePixelRatio || 1),
         cacheBust: true,
         backgroundColor: "#ffffff",
+        filter: (node) =>
+          !(
+            node instanceof HTMLElement &&
+            node.dataset.noCapture === "true"
+          ),
       });
       const blob = await (await fetch(dataUrl)).blob();
       const imageFile = new File([blob], filename, { type: "image/png" });
@@ -349,8 +354,11 @@ export default function Home() {
             </>
           )}
 
-          <div className="divider w-full" />
-          <div className="w-full flex flex-col items-center gap-3 sm:flex-row sm:justify-between sm:items-center">
+          <div data-no-capture="true" className="divider w-full" />
+          <div
+            data-no-capture="true"
+            className="w-full flex flex-col items-center gap-3 sm:flex-row sm:justify-between sm:items-center"
+          >
             <a
               href="https://bpa.usm.my/index.php/kalendar-akademik"
               target="_blank"
@@ -372,7 +380,7 @@ export default function Home() {
           </div>
 
           {shareFeedback && (
-            <p className="font-sans text-xs text-slate-500">
+            <p data-no-capture="true" className="font-sans text-xs text-slate-500">
               {shareFeedback}
             </p>
           )}
