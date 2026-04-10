@@ -51,6 +51,7 @@ function isShareAbortError(error: unknown): boolean {
 }
 
 const CALENDAR = getDefaultCalendar();
+const SHARE_URL = "https://usm-week.netlify.app/";
 
 // ── Countdown display ─────────────────────────────────────────────────────────
 
@@ -139,7 +140,8 @@ export default function Home() {
       if (typeof navigator.share === "function") {
         const shareData: ShareData = {
           title: "USM Week Snapshot",
-          text: `USM week snapshot for ${formatShortDate(now)}`,
+          text: SHARE_URL,
+          url: SHARE_URL,
           files: [imageFile],
         };
         const canShareFiles =
@@ -149,7 +151,6 @@ export default function Home() {
         if (canShareFiles) {
           try {
             await navigator.share(shareData);
-            setShareFeedback("Shared successfully.");
             return;
           } catch (error) {
             if (isShareAbortError(error)) return;
@@ -357,26 +358,71 @@ export default function Home() {
           <div data-no-capture="true" className="divider w-full" />
           <div
             data-no-capture="true"
-            className="w-full flex flex-col items-center gap-3 sm:flex-row sm:justify-between sm:items-center"
+            className="w-full flex flex-col items-center gap-3 pt-1 pb-0.5"
           >
-            <a
-              href="https://bpa.usm.my/index.php/kalendar-akademik"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-sans text-sm font-semibold text-sky-700 underline decoration-2 underline-offset-4 transition-colors hover:text-sky-900 hover:decoration-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 rounded-sm"
-              aria-label="View USM Academic Calendar"
-            >
-              USM Academic Calendar
-            </a>
-            <button
-              type="button"
-              onClick={handleShare}
-              disabled={isSharing}
-              className="font-sans text-sm font-semibold px-3 py-1.5 rounded-md bg-slate-900 text-white transition-colors hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500"
-              aria-label="Share this week snapshot as image"
-            >
-              {isSharing ? "Preparing image..." : "Share as image"}
-            </button>
+            <div className="inline-flex flex-col items-stretch">
+              <a
+                href="https://bpa.usm.my/index.php/kalendar-akademik"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-center font-sans text-sm font-semibold text-sky-700 underline decoration-2 underline-offset-4 transition-colors hover:text-sky-900 hover:decoration-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 rounded-sm"
+                aria-label="View USM Academic Calendar"
+              >
+                USM Academic Calendar
+              </a>
+              <button
+                type="button"
+                onClick={handleShare}
+                disabled={isSharing}
+                className="mt-7 h-8 w-full px-3 inline-flex items-center justify-center gap-1.5 rounded-full border border-slate-200/90 bg-slate-50/90 text-slate-500 text-xs font-medium shadow-[0_1px_2px_rgba(15,23,42,0.08)] transition-all hover:-translate-y-0.5 hover:bg-white hover:text-slate-700 hover:shadow-[0_4px_12px_rgba(15,23,42,0.08)] disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+                aria-label="Share this week snapshot as image"
+              >
+                {isSharing ? (
+                  <svg
+                    className="h-3.5 w-3.5 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="9"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeOpacity="0.25"
+                    />
+                    <path
+                      d="M21 12a9 9 0 0 0-9-9"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="h-3.5 w-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M16 8L8 12L16 16"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <circle cx="18" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.75" />
+                    <circle cx="6" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.75" />
+                    <circle cx="18" cy="17" r="2.5" stroke="currentColor" strokeWidth="1.75" />
+                  </svg>
+                )}
+                <span>Share</span>
+              </button>
+            </div>
           </div>
 
           {shareFeedback && (
