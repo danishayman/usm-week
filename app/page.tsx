@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { toPng } from "html-to-image";
 import {
   ACTIVITY_TYPE_METADATA,
   FALLBACK_ACTIVITY_TYPE_META,
@@ -34,6 +35,19 @@ function formatShortDate(d: Date): string {
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
+}
+
+function formatDateKey(d: Date): string {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function isShareAbortError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    error.name === "AbortError"
+  );
 }
 
 const CALENDAR = getDefaultCalendar();
@@ -82,6 +96,70 @@ function LiveCountdown({ parts, colour }: { parts: CountdownParts; colour: strin
 
 export default function Home() {
   const [now, setNow] = useState<Date | null>(null);
+  const [isSharing, setIsSharing] = useState(false);
+  const [shareFeedback, setShareFeedback] = useState<string | null>(null);
+  const captureRef = useRef<HTMLDivElement | null>(null);
+
+  const triggerDownload = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleShare = async () => {
+    if (!captureRef.current || isSharing || !now) return;
+
+    setIsSharing(true);
+    setShareFeedback(null);
+
+    const filename = `usm-week-${formatDateKey(now)}.png`;
+
+    try {
+      if (document.fonts?.status !== "loaded") {
+        await document.fonts?.ready;
+      }
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+      const dataUrl = await toPng(captureRef.current, {
+        pixelRatio: Math.max(2, window.devicePixelRatio || 1),
+        cacheBust: true,
+        backgroundColor: "#ffffff",
+      });
+      const blob = await (await fetch(dataUrl)).blob();
+      const imageFile = new File([blob], filename, { type: "image/png" });
+
+      if (typeof navigator.share === "function") {
+        const shareData: ShareData = {
+          title: "USM Week Snapshot",
+          text: `USM week snapshot for ${formatShortDate(now)}`,
+          files: [imageFile],
+        };
+        const canShareFiles =
+          typeof navigator.canShare !== "function" ||
+          navigator.canShare({ files: [imageFile] });
+
+        if (canShareFiles) {
+          try {
+            await navigator.share(shareData);
+            setShareFeedback("Shared successfully.");
+            return;
+          } catch (error) {
+            if (isShareAbortError(error)) return;
+          }
+        }
+      }
+
+      triggerDownload(blob, filename);
+      setShareFeedback("Sharing not supported here, so the image was downloaded.");
+    } catch {
+      setShareFeedback("Couldn't generate the image. Please try again.");
+    } finally {
+      setIsSharing(false);
+    }
+  };
 
   // Only start ticking after mount to avoid hydration mismatch
   useEffect(() => {
@@ -174,113 +252,131 @@ export default function Home() {
         </svg>
       </a>
 
-      {/* University label */}
-      <div className="flex flex-col items-center gap-2 mb-6 animate-fade-up">
-        <Image
-          src="/usm.png"
-          alt="Universiti Sains Malaysia Logo"
-          width={112}
-          height={112}
-          className="object-contain"
-          priority
-        />
-        <p className="font-sans text-xs font-semibold uppercase tracking-widest text-slate-800">
-          Universiti Sains Malaysia
-        </p>
-      </div>
-
-      {/* Card */}
-      <div className="card w-full max-w-md p-8 flex flex-col items-center text-center gap-5 animate-fade-up delay-100">
-
-        {/* Date */}
-        <p className="font-sans text-sm text-slate-500">
-          Today is{" "}
-          <strong className="font-mono text-slate-800 font-semibold">
-            {formatDate(now)}
-          </strong>
-        </p>
-
-        <div className="divider w-full" />
-
-        {/* Current activity */}
-        <div className="flex flex-col items-center gap-2 py-1 w-full">
-
-          {/* Current week / activity eyebrow */}
-          <p
-            className={`font-sans text-lg sm:text-xl font-bold uppercase tracking-widest ${accentText}`}
-          >
-            {headlineActivity}
-          </p>
-
-          {/* Headline */}
-          <h1 className="font-sans text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight tracking-tight">
-            {weekBadge ?? "Currently"}
-          </h1>
-
-          {/* Retro progress bar */}
-          {!isPre && !isPost && (
-            <div className="w-full mt-1">
-              <div
-                className="w-full rounded-full overflow-hidden"
-                style={{
-                  background: "#000",
-                  border: "3px solid #000",
-                  borderRadius: "999px",
-                }}
-              >
-                <div
-                  suppressHydrationWarning
-                  style={{
-                    width: `${progressPercent}%`,
-                    background: "#00ff00",
-                    height: "22px",
-                    borderRadius: "999px",
-                    transition: "width 0.6s ease",
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Sub-line */}
-          <p className="font-mono text-xs sm:text-sm text-slate-500 whitespace-nowrap">
-            {subLine}
+      <div ref={captureRef} className="w-full max-w-md">
+        {/* University label */}
+        <div className="flex flex-col items-center gap-2 mb-6 animate-fade-up">
+          <Image
+            src="/usm.png"
+            alt="Universiti Sains Malaysia Logo"
+            width={112}
+            height={112}
+            className="object-contain"
+            priority
+          />
+          <p className="font-sans text-xs font-semibold uppercase tracking-widest text-slate-800">
+            Universiti Sains Malaysia
           </p>
         </div>
 
-        {/* Countdown */}
-        {!isPost && (
-          <>
-            <div className="divider w-full" />
-            <div className="flex flex-col items-center gap-5 w-full py-2">
-              <p className="font-mono text-xs font-semibold uppercase tracking-widest text-slate-400">
+        {/* Card */}
+        <div className="card w-full p-8 flex flex-col items-center text-center gap-5 animate-fade-up delay-100">
+
+          {/* Date */}
+          <p className="font-sans text-sm text-slate-500">
+            Today is{" "}
+            <strong className="font-mono text-slate-800 font-semibold">
+              {formatDate(now)}
+            </strong>
+          </p>
+
+          <div className="divider w-full" />
+
+          {/* Current activity */}
+          <div className="flex flex-col items-center gap-2 py-1 w-full">
+
+            {/* Current week / activity eyebrow */}
+            <p
+              className={`font-sans text-lg sm:text-xl font-bold uppercase tracking-widest ${accentText}`}
+            >
+              {headlineActivity}
+            </p>
+
+            {/* Headline */}
+            <h1 className="font-sans text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight tracking-tight">
+              {weekBadge ?? "Currently"}
+            </h1>
+
+            {/* Retro progress bar */}
+            {!isPre && !isPost && (
+              <div className="w-full mt-1">
+                <div
+                  className="w-full rounded-full overflow-hidden"
+                  style={{
+                    background: "#000",
+                    border: "3px solid #000",
+                    borderRadius: "999px",
+                  }}
+                >
+                  <div
+                    suppressHydrationWarning
+                    style={{
+                      width: `${progressPercent}%`,
+                      background: "#00ff00",
+                      height: "22px",
+                      borderRadius: "999px",
+                      transition: "width 0.6s ease",
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Sub-line */}
+            <p className="font-mono text-xs sm:text-sm text-slate-500 whitespace-nowrap">
+              {subLine}
+            </p>
+          </div>
+
+          {/* Countdown */}
+          {!isPost && (
+            <>
+              <div className="divider w-full" />
+              <div className="flex flex-col items-center gap-5 w-full py-2">
+                <p className="font-mono text-xs font-semibold uppercase tracking-widest text-slate-400">
+                  {countdownLabel}
+                </p>
+                <LiveCountdown parts={countdown} colour={accentHex} />
+              </div>
+            </>
+          )}
+
+          {isPost && (
+            <>
+              <div className="divider w-full" />
+              <p className="text-sm text-slate-400">
                 {countdownLabel}
               </p>
-              <LiveCountdown parts={countdown} colour={accentHex} />
-            </div>
-          </>
-        )}
+            </>
+          )}
 
-        {isPost && (
-          <>
-            <div className="divider w-full" />
-            <p className="text-sm text-slate-400">
-              {countdownLabel}
+          <div className="divider w-full" />
+          <div className="w-full flex flex-col items-center gap-3 sm:flex-row sm:justify-between sm:items-center">
+            <a
+              href="https://bpa.usm.my/index.php/kalendar-akademik"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-sans text-sm font-semibold text-sky-700 underline decoration-2 underline-offset-4 transition-colors hover:text-sky-900 hover:decoration-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 rounded-sm"
+              aria-label="View USM Academic Calendar"
+            >
+              USM Academic Calendar
+            </a>
+            <button
+              type="button"
+              onClick={handleShare}
+              disabled={isSharing}
+              className="font-sans text-sm font-semibold px-3 py-1.5 rounded-md bg-slate-900 text-white transition-colors hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500"
+              aria-label="Share this week snapshot as image"
+            >
+              {isSharing ? "Preparing image..." : "Share as image"}
+            </button>
+          </div>
+
+          {shareFeedback && (
+            <p className="font-sans text-xs text-slate-500">
+              {shareFeedback}
             </p>
-          </>
-        )}
-
-        <div className="divider w-full" />
-        <a
-          href="https://bpa.usm.my/index.php/kalendar-akademik"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-sans text-sm font-semibold text-sky-700 underline decoration-2 underline-offset-4 transition-colors hover:text-sky-900 hover:decoration-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 rounded-sm"
-          aria-label="View USM Academic Calendar"
-        >
-          USM Academic Calendar
-        </a>
-
+          )}
+        </div>
       </div>
     </main>
   );
