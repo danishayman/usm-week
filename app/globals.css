@@ -85,19 +85,25 @@ background: linear-gradient(
   animation-delay: 0.48s;
 }
 
-/* ── GitHub Corner ────────────────────────────────────────────────────── */
-.github-corner .octo-arm {
-  animation: octocat-wave 3000ms ease-in-out infinite;
+/* ── Corner share icon ───────────────────────────────────────────────── */
+.corner-share-icon {
+  transform-origin: 68% 38%;
+  animation: cornerShareFloat 2.8s ease-in-out infinite;
 }
 
-.github-corner:hover .octo-arm {
-  animation: none;
+@keyframes cornerShareFloat {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-1px) rotate(4deg);
+  }
 }
 
-@keyframes octocat-wave {
-  0%, 100% { transform: rotate(0); }
-  20%, 60% { transform: rotate(-25deg); }
-  40%, 80% { transform: rotate(10deg); }
+@media (prefers-reduced-motion: reduce) {
+  .corner-share-icon {
+    animation: none;
+  }
 }
 
 /* ── Divider ─────────────────────────────────────────────────────────── */

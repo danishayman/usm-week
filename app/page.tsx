@@ -98,6 +98,7 @@ function LiveCountdown({ parts, colour }: { parts: CountdownParts; colour: strin
 export default function Home() {
   const [now, setNow] = useState<Date | null>(null);
   const [isSharing, setIsSharing] = useState(false);
+  const [isCaptureMode, setIsCaptureMode] = useState(false);
   const [shareFeedback, setShareFeedback] = useState<string | null>(null);
   const captureRef = useRef<HTMLDivElement | null>(null);
 
@@ -119,9 +120,14 @@ export default function Home() {
     const filename = `usm-week-${formatDateKey(now)}.png`;
 
     try {
+      setIsCaptureMode(true);
+
       if (document.fonts?.status !== "loaded") {
         await document.fonts?.ready;
       }
+
+      // Let React commit capture-only layout before snapshotting.
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
       await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
       const dataUrl = await toPng(captureRef.current, {
@@ -138,10 +144,10 @@ export default function Home() {
       const imageFile = new File([blob], filename, { type: "image/png" });
 
       if (typeof navigator.share === "function") {
+        const shareCaptionText = `${captureCaptionLine}\n${SHARE_URL}`;
         const shareData: ShareData = {
           title: "USM Week Snapshot",
-          text: SHARE_URL,
-          url: SHARE_URL,
+          text: shareCaptionText,
           files: [imageFile],
         };
         const canShareFiles =
@@ -163,6 +169,7 @@ export default function Home() {
     } catch {
       setShareFeedback("Couldn't generate the image. Please try again.");
     } finally {
+      setIsCaptureMode(false);
       setIsSharing(false);
     }
   };
@@ -216,47 +223,84 @@ export default function Home() {
       ? `${info.termLabel} ${sessionLabel}`
       : info.termLabel;
   const progressPercent = Math.max(0, Math.min(100, info.progressPercent));
+  const formattedProgressPercent = Number.isInteger(progressPercent)
+    ? progressPercent.toFixed(0)
+    : progressPercent.toFixed(1);
 
   const subLine = (() => {
     if (isPre || isPost) return semesterProgressLabel;
-    return `${semesterProgressLabel} is ${Number.isInteger(progressPercent) ? progressPercent.toFixed(0) : progressPercent.toFixed(1)}% complete.`;
+    return `${semesterProgressLabel} is ${formattedProgressPercent}% complete.`;
+  })();
+
+  const captureCaptionLine = (() => {
+    if (isPre || isPost) return semesterProgressLabel;
+    return `${semesterProgressLabel} is ${formattedProgressPercent}% complete.`;
   })();
 
   return (
     <main className="relative min-h-screen flex flex-col items-center justify-center px-4 py-4">
-
-      {/* GitHub corner */}
-      <a
-        href="https://github.com/danishayman/usm-week"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="github-corner absolute top-0 left-0 z-50"
-        aria-label="View source on GitHub"
+      <button
+        type="button"
+        onClick={handleShare}
+        disabled={isSharing}
+        className="absolute top-0 right-0 z-50 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+        aria-label="Share this week snapshot as image"
       >
         <svg
           width="80"
           height="80"
           viewBox="0 0 250 250"
-          style={{
-            fill: "#151513",
-            color: "#fff",
-            transform: "scaleX(-1)",
-          }}
+          className="block"
+          aria-hidden="true"
         >
-          <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z" />
-          <path
-            d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2"
-            fill="currentColor"
-            style={{ transformOrigin: "130px 106px" }}
-            className="octo-arm"
-          />
-          <path
-            d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.3,141.5 141.4,141.4 Z"
-            fill="currentColor"
-            className="octo-body"
-          />
+          <path d="M0,0 L250,0 L250,250 Z" fill="#151513" />
         </svg>
-      </a>
+        <span className="pointer-events-none absolute top-3 right-3 flex h-7 w-7 items-center justify-center text-white">
+          {isSharing ? (
+            <svg
+              className="h-5 w-5 animate-spin"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="9"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeOpacity="0.25"
+              />
+              <path
+                d="M21 12a9 9 0 0 0-9-9"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+            </svg>
+          ) : (
+            <svg
+              className="h-5 w-5 corner-share-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path
+                d="M16 8L8 12L16 16"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <circle cx="18" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.75" />
+              <circle cx="6" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.75" />
+              <circle cx="18" cy="17" r="2.5" stroke="currentColor" strokeWidth="1.75" />
+            </svg>
+          )}
+        </span>
+      </button>
 
       <div ref={captureRef} className="w-full max-w-md">
         {/* University label */}
@@ -355,75 +399,27 @@ export default function Home() {
             </>
           )}
 
-          <div data-no-capture="true" className="divider w-full" />
-          <div
-            data-no-capture="true"
-            className="w-full flex flex-col items-center gap-3 pt-1 pb-0.5"
-          >
-            <div className="inline-flex flex-col items-stretch">
-              <a
-                href="https://bpa.usm.my/index.php/kalendar-akademik"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-center font-sans text-sm font-semibold text-sky-700 underline decoration-2 underline-offset-4 transition-colors hover:text-sky-900 hover:decoration-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 rounded-sm"
-                aria-label="View USM Academic Calendar"
+          {isCaptureMode ? null : (
+            <>
+              <div data-no-capture="true" className="divider w-full" />
+              <div
+                data-no-capture="true"
+                className="w-full flex flex-col items-center gap-3 pt-1 pb-0.5"
               >
-                USM Academic Calendar
-              </a>
-              <button
-                type="button"
-                onClick={handleShare}
-                disabled={isSharing}
-                className="mt-7 h-8 w-full px-3 inline-flex items-center justify-center gap-1.5 rounded-full border border-slate-200/90 bg-slate-50/90 text-slate-500 text-xs font-medium shadow-[0_1px_2px_rgba(15,23,42,0.08)] transition-all hover:-translate-y-0.5 hover:bg-white hover:text-slate-700 hover:shadow-[0_4px_12px_rgba(15,23,42,0.08)] disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
-                aria-label="Share this week snapshot as image"
-              >
-                {isSharing ? (
-                  <svg
-                    className="h-3.5 w-3.5 animate-spin"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
+                <div className="inline-flex flex-col items-stretch">
+                  <a
+                    href="https://bpa.usm.my/index.php/kalendar-akademik"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-center font-sans text-sm font-semibold text-sky-700 underline decoration-2 underline-offset-4 transition-colors hover:text-sky-900 hover:decoration-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 rounded-sm"
+                    aria-label="View USM Academic Calendar"
                   >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="9"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeOpacity="0.25"
-                    />
-                    <path
-                      d="M21 12a9 9 0 0 0-9-9"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                ) : (
-                  <svg
-                    className="h-3.5 w-3.5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M16 8L8 12L16 16"
-                      stroke="currentColor"
-                      strokeWidth="1.75"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <circle cx="18" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.75" />
-                    <circle cx="6" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.75" />
-                    <circle cx="18" cy="17" r="2.5" stroke="currentColor" strokeWidth="1.75" />
-                  </svg>
-                )}
-                <span>Share</span>
-              </button>
-            </div>
-          </div>
+                    USM Academic Calendar
+                  </a>
+                </div>
+              </div>
+            </>
+          )}
 
           {shareFeedback && (
             <p data-no-capture="true" className="font-sans text-xs text-slate-500">
