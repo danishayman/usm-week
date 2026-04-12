@@ -51,7 +51,7 @@ function isShareAbortError(error: unknown): boolean {
 }
 
 const CALENDAR = getDefaultCalendar();
-const SHARE_URL = "https://usm-week.netlify.app/";
+const SHARE_URL = "https://usm.danishaiman.com/";
 
 // ── Countdown display ─────────────────────────────────────────────────────────
 
