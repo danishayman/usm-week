@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "USM Week — Academic Dashboard",
+  title: "USM Week",
   description: "Track USM current Teaching & Learning Week in real time.",
   other: {
     "apple-mobile-web-app-title": "USM Week",
