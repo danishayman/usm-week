@@ -51,7 +51,7 @@ function isShareAbortError(error: unknown): boolean {
 }
 
 const CALENDAR = getDefaultCalendar();
-const SHARE_URL = "https://usm.danishaiman.com/";
+const SHARE_URL = "https://usm.danishaiman.com";
 
 // ── Countdown display ─────────────────────────────────────────────────────────
 
@@ -133,7 +133,6 @@ export default function Home() {
       const dataUrl = await toPng(captureRef.current, {
         pixelRatio: Math.max(2, window.devicePixelRatio || 1),
         cacheBust: true,
-        backgroundColor: "#ffffff",
         filter: (node) =>
           !(
             node instanceof HTMLElement &&
@@ -144,10 +143,10 @@ export default function Home() {
       const imageFile = new File([blob], filename, { type: "image/png" });
 
       if (typeof navigator.share === "function") {
-        const shareCaptionText = `${captureCaptionLine}\n${SHARE_URL}`;
+        const captureCaptionLine = `${semesterProgressLabel} is ${formattedProgressPercent}% complete.`;
         const shareData: ShareData = {
           title: "USM Week Snapshot",
-          text: shareCaptionText,
+          text: `${captureCaptionLine}\n${SHARE_URL}`,
           files: [imageFile],
         };
         const canShareFiles =
@@ -232,11 +231,6 @@ export default function Home() {
     return `${semesterProgressLabel} is ${formattedProgressPercent}% complete.`;
   })();
 
-  const captureCaptionLine = (() => {
-    if (isPre || isPost) return semesterProgressLabel;
-    return `${semesterProgressLabel} is ${formattedProgressPercent}% complete.`;
-  })();
-
   return (
     <main className="relative min-h-screen flex flex-col items-center justify-center px-4 py-4">
       <button
@@ -302,7 +296,10 @@ export default function Home() {
         </span>
       </button>
 
-      <div ref={captureRef} className="w-full max-w-md">
+      <div
+        ref={captureRef}
+        className={`w-full max-w-md ${isCaptureMode ? "share-capture-frame" : ""}`}
+      >
         {/* University label */}
         <div className="flex flex-col items-center gap-2 mb-6 animate-fade-up">
           <Image
