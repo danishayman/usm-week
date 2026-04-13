@@ -51,7 +51,7 @@ function isShareAbortError(error: unknown): boolean {
 }
 
 const CALENDAR = getDefaultCalendar();
-const SHARE_URL = "https://usm.danishaiman.com";
+const SHARE_URL = "usm.danishaiman.com";
 
 // ── Countdown display ─────────────────────────────────────────────────────────
 
