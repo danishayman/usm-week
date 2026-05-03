@@ -64,6 +64,57 @@ export function isoDateToUtcEnd(isoDate: string): Date {
   return new Date(isoDateToUtcEndMs(isoDate));
 }
 
+function getTimeZoneOffsetMs(atUtcMs: number, timeZone: string): number {
+  const atDate = new Date(atUtcMs);
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(atDate);
+
+  const values = Object.fromEntries(
+    parts
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, Number(part.value)])
+  ) as Record<string, number>;
+
+  const asUtcMs = Date.UTC(
+    values.year,
+    values.month - 1,
+    values.day,
+    values.hour,
+    values.minute,
+    values.second
+  );
+
+  return asUtcMs - atUtcMs;
+}
+
+export function isoDateToTimeZoneStart(isoDate: string, timeZone: string): Date {
+  const parts = parseIsoDateParts(isoDate);
+  if (!parts) {
+    throw new Error(`Invalid ISO date: ${isoDate}`);
+  }
+
+  const utcMidnightMs = Date.UTC(parts.year, parts.month - 1, parts.day, 0, 0, 0, 0);
+  let candidateMs = utcMidnightMs;
+
+  // Iterate to stabilize around timezone transitions (for example DST offsets).
+  for (let i = 0; i < 3; i++) {
+    const offsetMs = getTimeZoneOffsetMs(candidateMs, timeZone);
+    const correctedMs = utcMidnightMs - offsetMs;
+    if (correctedMs === candidateMs) break;
+    candidateMs = correctedMs;
+  }
+
+  return new Date(candidateMs);
+}
+
 export function isoDateToEpochDay(isoDate: string): number {
   return Math.floor(isoDateToUtcStartMs(isoDate) / MS_PER_DAY);
 }

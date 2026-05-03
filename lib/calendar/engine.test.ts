@@ -49,7 +49,17 @@ describe("getCalendarInfo", () => {
     expect(finalBreakInfo.nextPeriod).toBeNull();
 
     const fallbackTarget = getCalendarCountdownTarget(calendar, finalBreakInfo);
-    expect(fallbackTarget.toISOString()).toBe("2026-10-05T00:00:00.000Z");
+    expect(fallbackTarget.toISOString()).toBe("2026-10-04T16:00:00.000Z");
+  });
+
+  it("uses calendar timezone midnight for next period countdown target", () => {
+    const teachingWeek7 = getCalendarInfo(
+      calendar,
+      new Date("2026-05-02T12:00:00.000Z")
+    );
+
+    const target = getCalendarCountdownTarget(calendar, teachingWeek7);
+    expect(target.toISOString()).toBe("2026-05-03T16:00:00.000Z");
   });
 
   it("matches known regression dates to expected period ids", () => {

@@ -3,6 +3,7 @@ import {
   dateToEpochDayInTimeZone,
   inclusiveDaysBetween,
   isoDateToEpochDay,
+  isoDateToTimeZoneStart,
   isoDateToUtcEnd,
   isoDateToUtcStart,
 } from "@/lib/calendar/date";
@@ -126,7 +127,9 @@ export function getCalendarInfo(
   const matchedIndex = periods.findIndex((period) => period.id === matched.id);
   const nextPeriod =
     matchedIndex >= 0 && matchedIndex < periods.length - 1 ? periods[matchedIndex + 1] : null;
-  const nextPeriodStart = nextPeriod ? isoDateToUtcStart(nextPeriod.startDate) : null;
+  const nextPeriodStart = nextPeriod
+    ? isoDateToTimeZoneStart(nextPeriod.startDate, calendar.timezone)
+    : null;
 
   let currentWeek: number | null = null;
   if (phase === "active" && matched.weekStart !== undefined) {
@@ -173,7 +176,7 @@ export function getCalendarCountdownTarget(
 ): Date {
   if (info.nextPeriodStart) return info.nextPeriodStart;
   if (calendar.nextAcademicYearStart) {
-    return isoDateToUtcStart(calendar.nextAcademicYearStart);
+    return isoDateToTimeZoneStart(calendar.nextAcademicYearStart, calendar.timezone);
   }
 
   return info.periodEnd;
