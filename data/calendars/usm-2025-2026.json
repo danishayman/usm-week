@@ -119,20 +119,11 @@
       "countsTowardProgress": false
     },
     {
-      "id": "sem2-pre-exam-break",
-      "termId": "sem-2",
-      "label": "Exam Preparation Break",
-      "type": "break",
-      "startDate": "2026-07-06",
-      "endDate": "2026-07-07",
-      "countsTowardProgress": false
-    },
-    {
       "id": "sem2-exam",
       "termId": "sem-2",
-      "label": "Examination",
+      "label": "Final Examination",
       "type": "exam",
-      "startDate": "2026-07-08",
+      "startDate": "2026-07-06",
       "endDate": "2026-07-26",
       "countsTowardProgress": false
     },
