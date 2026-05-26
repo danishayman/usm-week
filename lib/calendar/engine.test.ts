@@ -33,10 +33,13 @@ describe("getCalendarInfo", () => {
       calendar,
       new Date("2026-01-11T12:00:00.000Z")
     );
-    const week15End = getCalendarInfo(calendar, new Date("2026-01-18T12:00:00.000Z"));
+    const finalDay = getCalendarInfo(calendar, new Date("2026-01-18T12:00:00.000Z"));
+    const week15End = getCalendarInfo(calendar, new Date("2026-01-18T16:00:00.000Z"));
     const revisionWeek = getCalendarInfo(calendar, new Date("2026-01-20T12:00:00.000Z"));
 
     expect(beforeWeek15End.progressPercent).toBeLessThan(100);
+    expect(finalDay.progressPercent).toBeGreaterThan(99);
+    expect(finalDay.progressPercent).toBeLessThan(100);
     expect(week15End.progressPercent).toBe(100);
     expect(revisionWeek.progressPercent).toBe(100);
   });
@@ -66,7 +69,7 @@ describe("getCalendarInfo", () => {
     const cases = [
       { at: "2026-02-20T12:00:00.000Z", expectedId: "sem1-term-break" },
       { at: "2026-03-16T12:00:00.000Z", expectedId: "sem2-teaching-01" },
-      { at: "2026-07-06T12:00:00.000Z", expectedId: "sem2-pre-exam-break" },
+      { at: "2026-07-06T12:00:00.000Z", expectedId: "sem2-exam" },
     ] as const;
 
     for (const scenario of cases) {
