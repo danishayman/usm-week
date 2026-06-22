@@ -222,9 +222,7 @@ export default function Home() {
       ? `${info.termLabel} ${sessionLabel}`
       : info.termLabel;
   const progressPercent = Math.max(0, Math.min(100, info.progressPercent));
-  const formattedProgressPercent = Number.isInteger(progressPercent)
-    ? progressPercent.toFixed(0)
-    : progressPercent.toFixed(1);
+  const formattedProgressPercent = progressPercent.toFixed(2);
 
   const subLine = (() => {
     if (isPre || isPost) return semesterProgressLabel;

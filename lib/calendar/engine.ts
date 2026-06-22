@@ -1,6 +1,7 @@
 import {
   MS_PER_DAY,
   dateToEpochDayInTimeZone,
+  formatIsoDateFromEpochDay,
   inclusiveDaysBetween,
   isoDateToEpochDay,
   isoDateToTimeZoneStart,
@@ -142,14 +143,22 @@ export function getCalendarInfo(
   const termPeriods = getCurrentTermPeriods(periods, matched.termId);
   const progressStartDay = isoDateToEpochDay(termPeriods[0].startDate);
   const progressEndDay = getProgressEndDay(termPeriods);
-  const totalProgressDays = Math.max(1, progressEndDay - progressStartDay + 1);
-  const elapsedProgressDays = clamp(
-    todayDay - progressStartDay + 1,
+  const progressStartMs = isoDateToTimeZoneStart(
+    termPeriods[0].startDate,
+    calendar.timezone
+  ).getTime();
+  const progressEndExclusiveMs = isoDateToTimeZoneStart(
+    formatIsoDateFromEpochDay(progressEndDay + 1),
+    calendar.timezone
+  ).getTime();
+  const totalProgressMs = Math.max(1, progressEndExclusiveMs - progressStartMs);
+  const elapsedProgressMs = clamp(
+    now.getTime() - progressStartMs,
     0,
-    totalProgressDays
+    totalProgressMs
   );
   const progressPercent = clamp(
-    (elapsedProgressDays / totalProgressDays) * 100,
+    (elapsedProgressMs / totalProgressMs) * 100,
     0,
     100
   );
