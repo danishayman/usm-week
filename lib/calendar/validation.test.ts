@@ -39,6 +39,16 @@ describe("validateCalendar", () => {
     expect(() => validateCalendar(calendar)).toThrow();
   });
 
+  it("accepts week-tracked periods that end mid-week", () => {
+    const calendar = cloneCalendar();
+    const teaching = calendar.periods.find((period) => period.id === "sem2-teaching-02");
+    const revision = calendar.periods.find((period) => period.id === "sem2-revision");
+
+    expect(teaching?.endDate).toBe("2026-06-26");
+    expect(revision?.startDate).toBe("2026-06-27");
+    expect(() => validateCalendar(calendar)).not.toThrow();
+  });
+
   it("rejects implicit date gaps", () => {
     const calendar = cloneCalendar();
     calendar.periods[10].startDate = "2026-07-07";

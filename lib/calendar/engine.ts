@@ -43,6 +43,10 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(value, max));
 }
 
+function getTrackedWeekSpan(period: CalendarPeriod): number {
+  return Math.ceil(inclusiveDaysBetween(period.startDate, period.endDate) / 7);
+}
+
 function getCurrentTermPeriods(
   periods: CalendarPeriod[],
   termId: string
@@ -56,13 +60,13 @@ function getProgressEndDay(termPeriods: CalendarPeriod[]): number {
   for (const period of termPeriods) {
     if (!period.countsTowardProgress || period.weekStart === undefined) continue;
 
-    const durationInDays = inclusiveDaysBetween(period.startDate, period.endDate);
-    const durationInWeeks = Math.floor(durationInDays / 7);
+    const durationInWeeks = getTrackedWeekSpan(period);
     const lastWeek = period.weekStart + durationInWeeks - 1;
 
     if (period.weekStart <= PROGRESS_TARGET_WEEK && lastWeek >= PROGRESS_TARGET_WEEK) {
       const weeksNeeded = PROGRESS_TARGET_WEEK - period.weekStart + 1;
-      progressEndDay = isoDateToEpochDay(period.startDate) + weeksNeeded * 7 - 1;
+      const targetWeekEndDay = isoDateToEpochDay(period.startDate) + weeksNeeded * 7 - 1;
+      progressEndDay = Math.min(targetWeekEndDay, isoDateToEpochDay(period.endDate));
       break;
     }
   }
@@ -79,7 +83,7 @@ function getTotalWeeks(termPeriods: CalendarPeriod[]): number {
       return acc;
     }
 
-    return acc + Math.floor(inclusiveDaysBetween(period.startDate, period.endDate) / 7);
+    return acc + getTrackedWeekSpan(period);
   }, 0);
 }
 
@@ -136,7 +140,8 @@ export function getCalendarInfo(
   if (phase === "active" && matched.weekStart !== undefined) {
     const periodStartDay = isoDateToEpochDay(matched.startDate);
     const weeksIn = Math.floor((todayDay - periodStartDay) / 7);
-    currentWeek = matched.weekStart + weeksIn;
+    const lastTrackedWeek = matched.weekStart + getTrackedWeekSpan(matched) - 1;
+    currentWeek = Math.min(matched.weekStart + weeksIn, lastTrackedWeek);
   }
 
   const term = termsById.get(matched.termId);

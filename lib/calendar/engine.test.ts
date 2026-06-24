@@ -44,6 +44,28 @@ describe("getCalendarInfo", () => {
     expect(revisionWeek.progressPercent).toBe(100);
   });
 
+  it("uses the shortened Semester II final teaching week dates", () => {
+    const finalTeachingDay = getCalendarInfo(
+      calendar,
+      new Date("2026-06-26T12:00:00.000Z")
+    );
+    const finalTeachingEnd = getCalendarInfo(
+      calendar,
+      new Date("2026-06-26T16:00:00.000Z")
+    );
+    const revisionStart = getCalendarInfo(
+      calendar,
+      new Date("2026-06-27T12:00:00.000Z")
+    );
+
+    expect(finalTeachingDay.currentPeriod.id).toBe("sem2-teaching-02");
+    expect(finalTeachingDay.currentWeek).toBe(15);
+    expect(finalTeachingDay.progressPercent).toBeLessThan(100);
+    expect(finalTeachingEnd.progressPercent).toBe(100);
+    expect(revisionStart.currentPeriod.id).toBe("sem2-revision");
+    expect(revisionStart.currentWeek).toBe(16);
+  });
+
   it("falls back to nextAcademicYearStart when there is no next period", () => {
     const finalBreakInfo = getCalendarInfo(
       calendar,

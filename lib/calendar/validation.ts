@@ -65,16 +65,7 @@ function checkWeekContinuityByTerm(
     if (period.weekStart === undefined) continue;
 
     const durationInDays = inclusiveDaysBetween(period.startDate, period.endDate);
-    if (durationInDays % 7 !== 0) {
-      ctx.addIssue({
-        code: "custom",
-        message: `Period "${period.id}" with weekStart must span full weeks.`,
-        path: ["periods"],
-      });
-      continue;
-    }
-
-    const weeksInPeriod = durationInDays / 7;
+    const weeksInPeriod = Math.ceil(durationInDays / 7);
     const periodLastWeek = period.weekStart + weeksInPeriod - 1;
 
     if (previousLastWeek === null) {
