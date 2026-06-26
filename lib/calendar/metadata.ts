@@ -11,20 +11,20 @@ export const ACTIVITY_TYPE_METADATA: Record<ActivityType, ActivityTypeMeta> = {
     countdownColor: "#501f7d",
   },
   revision: {
-    accentTextClass: "text-amber-600",
-    countdownColor: "#d97706",
+    accentTextClass: "text-purple-950",
+    countdownColor: "#501f7d",
   },
   exam: {
-    accentTextClass: "text-rose-600",
-    countdownColor: "#e11d48",
+    accentTextClass: "text-purple-950",
+    countdownColor: "#501f7d",
   },
   break: {
     accentTextClass: "text-purple-800",
     countdownColor: "#3D007A",
   },
   industrial: {
-    accentTextClass: "text-sky-600",
-    countdownColor: "#0284c7",
+    accentTextClass: "text-purple-950",
+    countdownColor: "#501f7d",
   },
 };
 
