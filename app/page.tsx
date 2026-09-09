@@ -174,6 +174,10 @@ export default function Home() {
 
   // Only start ticking after mount to avoid hydration mismatch
   useEffect(() => {
+    // Seeding the clock on mount is the point of this effect: the server has
+    // no correct value to render, so the first client tick has to come from
+    // here rather than from initial state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setNow(new Date());
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);

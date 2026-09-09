@@ -146,7 +146,6 @@ export function getCalendarInfo(
 
   const term = termsById.get(matched.termId);
   const termPeriods = getCurrentTermPeriods(periods, matched.termId);
-  const progressStartDay = isoDateToEpochDay(termPeriods[0].startDate);
   const progressEndDay = getProgressEndDay(termPeriods);
   const progressStartMs = isoDateToTimeZoneStart(
     termPeriods[0].startDate,
