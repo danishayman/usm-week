@@ -3,6 +3,7 @@ import {
   getCalendarInfo,
 } from "@/lib/calendar/engine";
 import { loadCalendar } from "@/lib/calendar/loader";
+import { validateCalendar } from "@/lib/calendar/validation";
 import { describe, expect, it } from "vitest";
 
 const calendar = loadCalendar("2025-2026");
@@ -28,7 +29,7 @@ describe("getCalendarInfo", () => {
     expect(post.phase).toBe("post");
   });
 
-  it("reaches 100% progress at the end of teaching week 15", () => {
+  it("reaches 100% progress at the end of the final teaching block", () => {
     const beforeWeek15End = getCalendarInfo(
       calendar,
       new Date("2026-01-11T12:00:00.000Z")
@@ -97,6 +98,68 @@ describe("getCalendarInfo", () => {
     for (const scenario of cases) {
       const info = getCalendarInfo(calendar, new Date(scenario.at));
       expect(info.currentPeriod.id).toBe(scenario.expectedId);
+    }
+  });
+});
+
+describe("progress endpoint is derived from the data", () => {
+  const term = { id: "sem-1", label: "Semester I", startDate: "2026-09-28", endDate: "2027-03-14" };
+
+  function build(periods: unknown[]) {
+    return validateCalendar({
+      institution: "Universiti Sains Malaysia",
+      timezone: "Asia/Kuala_Lumpur",
+      academicYear: "2026-2027",
+      terms: [term],
+      periods,
+    });
+  }
+
+  // 14 teaching weeks as always, but the mid-semester break runs two weeks, so
+  // teaching occupies week numbers 10-16 and week 15 is no longer the last one.
+  const twoWeekBreak = build([
+    { id: "t1", termId: "sem-1", label: "Semester I", type: "teaching", startDate: "2026-09-28", endDate: "2026-11-15", weekStart: 1, countsTowardProgress: true },
+    { id: "b1", termId: "sem-1", label: "Mid-Semester Break", type: "break", startDate: "2026-11-16", endDate: "2026-11-29", weekStart: 8, countsTowardProgress: false },
+    { id: "t2", termId: "sem-1", label: "Semester I", type: "teaching", startDate: "2026-11-30", endDate: "2027-01-17", weekStart: 10, countsTowardProgress: true },
+    { id: "r1", termId: "sem-1", label: "Revision Week", type: "revision", startDate: "2027-01-18", endDate: "2027-01-24", weekStart: 17, countsTowardProgress: false },
+    { id: "e1", termId: "sem-1", label: "Examination", type: "exam", startDate: "2027-01-25", endDate: "2027-02-14", weekStart: 18, countsTowardProgress: false },
+    { id: "k1", termId: "sem-1", label: "Semester Break", type: "break", startDate: "2027-02-15", endDate: "2027-03-14", weekStart: 21, countsTowardProgress: false },
+  ]);
+
+  // The break carries no weekStart -- the same authoring style already used by
+  // sem2-exam and sem2-long-break -- so no period spans week number 15 at all.
+  const unnumberedBreak = build([
+    { id: "t1", termId: "sem-1", label: "Semester I", type: "teaching", startDate: "2026-09-28", endDate: "2026-11-15", weekStart: 1, countsTowardProgress: true },
+    { id: "b1", termId: "sem-1", label: "Mid-Semester Break", type: "break", startDate: "2026-11-16", endDate: "2026-11-22", countsTowardProgress: false },
+    { id: "t2", termId: "sem-1", label: "Semester I", type: "teaching", startDate: "2026-11-23", endDate: "2027-01-10", weekStart: 8, countsTowardProgress: true },
+    { id: "r1", termId: "sem-1", label: "Revision Week", type: "revision", startDate: "2027-01-11", endDate: "2027-01-17", weekStart: 15, countsTowardProgress: false },
+    { id: "e1", termId: "sem-1", label: "Examination", type: "exam", startDate: "2027-01-18", endDate: "2027-02-07", weekStart: 16, countsTowardProgress: false },
+    { id: "k1", termId: "sem-1", label: "Semester Break", type: "break", startDate: "2027-02-08", endDate: "2027-03-14", weekStart: 19, countsTowardProgress: false },
+  ]);
+
+  it("fills exactly when teaching ends, whatever shape the break is", () => {
+    // Two-week break: teaching ends 2027-01-17, not at week number 15.
+    expect(
+      getCalendarInfo(twoWeekBreak, new Date("2027-01-11T04:00:00.000Z")).progressPercent
+    ).toBeLessThan(100);
+    expect(
+      getCalendarInfo(twoWeekBreak, new Date("2027-01-17T16:00:00.000Z")).progressPercent
+    ).toBe(100);
+
+    // Unnumbered break: teaching ends 2027-01-10 and no period spans week 15.
+    expect(
+      getCalendarInfo(unnumberedBreak, new Date("2027-01-10T16:00:00.000Z")).progressPercent
+    ).toBe(100);
+  });
+
+  it("does not keep filling through revision, exams and the break", () => {
+    for (const calendarUnderTest of [twoWeekBreak, unnumberedBreak]) {
+      expect(
+        getCalendarInfo(calendarUnderTest, new Date("2027-02-20T04:00:00.000Z")).progressPercent
+      ).toBe(100);
+      expect(
+        getCalendarInfo(calendarUnderTest, new Date("2027-03-14T04:00:00.000Z")).progressPercent
+      ).toBe(100);
     }
   });
 });

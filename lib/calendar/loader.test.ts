@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { getCalendarInfo } from "@/lib/calendar/engine";
 import { getCalendarForDate, listAvailableAcademicYears } from "@/lib/calendar/loader";
-import { getSemesterInfo } from "@/lib/semester";
 
 function calendarYearOn(isoDate: string): string {
   // Midday UTC is the same calendar day in Asia/Kuala_Lumpur (UTC+8).
@@ -19,13 +19,18 @@ describe("getCalendarForDate", () => {
   });
 
   it("rolls over on the first day of the new session without a redeploy", () => {
-    const lastDay = getSemesterInfo(new Date("2026-09-27T12:00:00.000Z"));
-    const firstDay = getSemesterInfo(new Date("2026-09-28T12:00:00.000Z"));
+    const at = (iso: string) => {
+      const when = new Date(iso);
+      return getCalendarInfo(getCalendarForDate(when), when);
+    };
+
+    const lastDay = at("2026-09-27T12:00:00.000Z");
+    const firstDay = at("2026-09-28T12:00:00.000Z");
 
     expect(lastDay.phase).toBe("active");
-    expect(lastDay.currentActivity.label).toBe("Long Semester Break");
+    expect(lastDay.currentPeriod.label).toBe("Long Semester Break");
     expect(firstDay.phase).toBe("active");
-    expect(firstDay.currentActivity.label).toBe("Semester I");
+    expect(firstDay.currentPeriod.label).toBe("Semester I");
     expect(firstDay.currentWeek).toBe(1);
   });
 

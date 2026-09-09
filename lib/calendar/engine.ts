@@ -37,8 +37,6 @@ export interface CountdownParts {
   total: number;
 }
 
-const PROGRESS_TARGET_WEEK = 15;
-
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(value, max));
 }
@@ -54,24 +52,18 @@ function getCurrentTermPeriods(
   return periods.filter((period) => period.termId === termId);
 }
 
+// Progress runs to the end of the last period that counts toward it -- in
+// practice the final teaching block. Deriving it from the data rather than a
+// fixed week number keeps it correct when a break changes length or is authored
+// without a weekStart, neither of which the schema forbids.
 function getProgressEndDay(termPeriods: CalendarPeriod[]): number {
-  let progressEndDay = isoDateToEpochDay(termPeriods[termPeriods.length - 1].endDate);
+  const lastTracked = [...termPeriods]
+    .reverse()
+    .find((period) => period.countsTowardProgress);
 
-  for (const period of termPeriods) {
-    if (!period.countsTowardProgress || period.weekStart === undefined) continue;
-
-    const durationInWeeks = getTrackedWeekSpan(period);
-    const lastWeek = period.weekStart + durationInWeeks - 1;
-
-    if (period.weekStart <= PROGRESS_TARGET_WEEK && lastWeek >= PROGRESS_TARGET_WEEK) {
-      const weeksNeeded = PROGRESS_TARGET_WEEK - period.weekStart + 1;
-      const targetWeekEndDay = isoDateToEpochDay(period.startDate) + weeksNeeded * 7 - 1;
-      progressEndDay = Math.min(targetWeekEndDay, isoDateToEpochDay(period.endDate));
-      break;
-    }
-  }
-
-  return progressEndDay;
+  return isoDateToEpochDay(
+    (lastTracked ?? termPeriods[termPeriods.length - 1]).endDate
+  );
 }
 
 function getTotalWeeks(termPeriods: CalendarPeriod[]): number {
