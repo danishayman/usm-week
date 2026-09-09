@@ -9,7 +9,7 @@ import {
   getCalendarCountdownTarget,
   getCalendarInfo,
   getCountdown,
-  getDefaultCalendar,
+  getCalendarForDate,
   type CountdownParts,
 } from "@/lib/semester";
 
@@ -50,7 +50,6 @@ function isShareAbortError(error: unknown): boolean {
   );
 }
 
-const CALENDAR = getDefaultCalendar();
 const SHARE_URL = "https://usm.danishaiman.com";
 
 // ── Countdown display ─────────────────────────────────────────────────────────
@@ -183,6 +182,9 @@ export default function Home() {
   // Render nothing until mounted on client
   if (!now) return null;
 
+  // Re-resolved on every tick so the app rolls into the next academic year
+  // on its own, with no redeploy.
+  const CALENDAR = getCalendarForDate(now);
   const info = getCalendarInfo(CALENDAR, now);
   const countdownTarget = getCalendarCountdownTarget(CALENDAR, info);
   const countdown = getCountdown(countdownTarget, now);

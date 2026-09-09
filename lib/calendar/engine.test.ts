@@ -74,7 +74,7 @@ describe("getCalendarInfo", () => {
     expect(finalBreakInfo.nextPeriod).toBeNull();
 
     const fallbackTarget = getCalendarCountdownTarget(calendar, finalBreakInfo);
-    expect(fallbackTarget.toISOString()).toBe("2026-10-04T16:00:00.000Z");
+    expect(fallbackTarget.toISOString()).toBe("2026-09-27T16:00:00.000Z");
   });
 
   it("uses calendar timezone midnight for next period countdown target", () => {

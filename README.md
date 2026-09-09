@@ -42,15 +42,23 @@ npm run test:watch # Run tests in watch mode
 
 Calendar data is stored in JSON files under `data/calendars/`.
 
-Current file:
+Current files:
 
 - `data/calendars/usm-2025-2026.json`
+- `data/calendars/usm-2026-2027.json`
 
-When updating calendar dates:
+The app picks the calendar that covers the current date, so it moves to the
+next academic year on its own with no redeploy. Between two sessions it keeps
+showing the one that just ended.
 
-1. Edit the relevant JSON file.
-2. Run `npm run test` to validate schema and calendar logic.
-3. Start the app with `npm run dev` and verify the UI output.
+To add a future academic year:
+
+1. Add `data/calendars/usm-<start>-<end>.json`, matching an existing file.
+2. Register it in the `CALENDAR_REGISTRY` map in `lib/calendar/loader.ts`.
+3. Run `npm run test` to validate schema and calendar logic.
+4. Start the app with `npm run dev` and verify the UI output.
+
+When updating dates in an existing file, edit it and run steps 3 and 4.
 
 ## Deployment
 

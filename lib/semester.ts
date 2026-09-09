@@ -6,6 +6,7 @@ import {
   type CountdownParts,
 } from "@/lib/calendar/engine";
 import {
+  getCalendarForDate,
   getDefaultCalendar,
   listAvailableAcademicYears,
   loadCalendar,
@@ -19,7 +20,12 @@ import type {
 
 export { ACTIVITY_TYPE_METADATA, FALLBACK_ACTIVITY_TYPE_META } from "@/lib/calendar/metadata";
 export { getCalendarInfo, getCalendarCountdownTarget, getCountdown };
-export { getDefaultCalendar, listAvailableAcademicYears, loadCalendar };
+export {
+  getCalendarForDate,
+  getDefaultCalendar,
+  listAvailableAcademicYears,
+  loadCalendar,
+};
 export type { AcademicCalendar, ActivityType, CalendarInfo, CalendarPeriod, CountdownParts };
 
 export type Phase = CalendarPhase;
@@ -64,7 +70,7 @@ function toLegacyActivity(period: CalendarPeriod): ActivityPeriod {
 }
 
 export function getSemesterInfo(now: Date = new Date()): SemesterInfo {
-  const calendar = getDefaultCalendar();
+  const calendar = getCalendarForDate(now);
   const info = getCalendarInfo(calendar, now);
 
   return {
