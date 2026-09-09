@@ -338,7 +338,7 @@ export default function Home() {
 
             {/* Headline */}
             <h1 className="font-sans text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight tracking-tight">
-              {weekBadge ?? "Currently"}
+              {weekBadge ?? ""}
             </h1>
 
             {/* Retro progress bar */}
