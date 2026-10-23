@@ -1,0 +1,136 @@
+name: Discord daily card
+
+on:
+  schedule:
+    # GitHub Actions cron runs in UTC. 12:00am in Asia/Kuala_Lumpur (UTC+8) is
+    # 16:00 UTC on the PREVIOUS calendar day, so "0 16 * * *" posts just after
+    # midnight Malaysia time. Do not change this to "0 0 * * *" -- that is 8am
+    # in Malaysia. Scheduled runs are best-effort and often start minutes late.
+    - cron: "0 16 * * *"
+  workflow_dispatch:
+    inputs:
+      image_url:
+        description: "Card URL to fetch (defaults to production)"
+        required: false
+        default: "https://usm.danishaiman.com/discord-image"
+
+permissions: {}
+
+concurrency:
+  group: discord-daily-card
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch the card
+        env:
+          IMAGE_URL: ${{ inputs.image_url || 'https://usm.danishaiman.com/discord-image' }}
+        run: |
+          set -euo pipefail
+
+          # The route is no-store already; the query string also keeps any
+          # intermediate cache from answering with an older card.
+          status=$(curl -sS -o card.png -w '%{http_code}' \
+            "${IMAGE_URL}?t=$(date +%s)")
+
+          if [ "$status" != "200" ]; then
+            echo "::error::Card fetch returned HTTP $status from $IMAGE_URL"
+            exit 1
+          fi
+
+          bytes=$(stat -c %s card.png)
+          if [ "$bytes" -eq 0 ]; then
+            echo "::error::Card fetch returned an empty file"
+            exit 1
+          fi
+
+          # The first 8 bytes of every PNG file.
+          if [ "$(head -c 8 card.png | od -An -tx1 | tr -d ' \n')" != "89504e470d0a1a0a" ]; then
+            echo "::error::Card fetch did not return a PNG"
+            exit 1
+          fi
+
+          echo "Fetched card.png ($bytes bytes)"
+
+      - name: Post to Discord
+        env:
+          # One webhook URL per line. Blank lines and lines starting with #
+          # are ignored, so each server can be labelled.
+          DISCORD_WEBHOOK_URLS: ${{ secrets.DISCORD_WEBHOOK_URLS }}
+        run: |
+          set -euo pipefail
+
+          mapfile -t webhooks < <(
+            printf '%s\n' "$DISCORD_WEBHOOK_URLS" \
+              | tr -d '\r' \
+              | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
+              | grep -v -e '^$' -e '^#' || true
+          )
+
+          if [ "${#webhooks[@]}" -eq 0 ]; then
+            echo "::error::The DISCORD_WEBHOOK_URLS secret is missing or empty"
+            exit 1
+          fi
+
+          for url in "${webhooks[@]}"; do
+            echo "::add-mask::$url"
+          done
+
+          today=$(TZ=Asia/Kuala_Lumpur date '+%Y-%m-%d')
+          label=$(TZ=Asia/Kuala_Lumpur date '+%A, %-d %B %Y')
+          filename="usm-week-${today}.png"
+
+          # The image goes up as an attachment, never as a link: Discord caches
+          # unfurled images, so a linked card would keep showing an old day.
+          # The site link is wrapped in <> so it does not unfurl its own
+          # preview image under the card, and no mentions are ever parsed.
+          jq -n \
+            --arg content "**USM Week** — ${label}
+          <https://usm.danishaiman.com>" \
+            --arg filename "$filename" \
+            '{
+              content: $content,
+              allowed_mentions: { parse: [] },
+              attachments: [{ id: 0, filename: $filename }]
+            }' > payload.json
+
+          # Read from a file: curl -F treats a ";" in an inline value as an
+          # option separator.
+          post() {
+            rm -f response.json headers.txt
+            curl -sS -o response.json -D headers.txt -w '%{http_code}' \
+              -F "payload_json=<payload.json;type=application/json" \
+              -F "files[0]=@card.png;type=image/png;filename=${filename}" \
+              "$1?wait=true" || true
+          }
+
+          failed=0
+          for i in "${!webhooks[@]}"; do
+            n=$((i + 1))
+            status=$(post "${webhooks[$i]}")
+
+            if [ "$status" = "429" ]; then
+              wait_for=$(grep -i '^retry-after:' headers.txt | tr -dc '0-9.' || true)
+              sleep "${wait_for:-2}"
+              status=$(post "${webhooks[$i]}")
+            fi
+
+            if [ "$status" = "200" ]; then
+              echo "Webhook #$n: posted"
+            else
+              # A deleted webhook returns 404; report it and keep going so the
+              # other servers still get today's card.
+              echo "::error::Webhook #$n: HTTP $status $(head -c 300 response.json 2>/dev/null || true)"
+              failed=$((failed + 1))
+            fi
+
+            sleep 1
+          done
+
+          echo "Posted to $(( ${#webhooks[@]} - failed )) of ${#webhooks[@]} webhooks"
+          if [ "$failed" -gt 0 ]; then
+            exit 1
+          fi

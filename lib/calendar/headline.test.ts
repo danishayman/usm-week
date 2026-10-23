@@ -35,8 +35,8 @@ describe("getHeadline", () => {
   it("falls back to a status phrase only where no week number exists", () => {
     // Semester II's exam and long break are authored without a weekStart.
     expect(headlineOn("2027-06-28")).toBe("Exams Ongoing");
-    expect(headlineOn("2027-07-19")).toBe("No Classes");
-    expect(headlineOn("2027-09-26")).toBe("No Classes");
+    expect(headlineOn("2027-07-19")).toBe("Enjoy :)");
+    expect(headlineOn("2027-09-26")).toBe("Enjoy :)");
   });
 
   it("covers the ends of the calendar", () => {
