@@ -69,14 +69,17 @@ progress and a day-level countdown to the next milestone.
 ### The image route
 
 `/discord-image` (`app/discord-image/route.tsx`) renders the card as a
-1200x675 PNG on the server, in the same style as the Open Graph image. It is
+portrait PNG on the server that matches the share image from the page on a
+phone, using the page's Inter and Geist Mono fonts from Google Fonts. It is
 rendered fresh on every request (`no-store`), so it always shows today's
 values. Preview it locally at
 [http://localhost:3000/discord-image](http://localhost:3000/discord-image).
+Under `npm run dev` only, add `?at=<date>` to preview another day, for example
+`/discord-image?at=2027-07-20`.
 
-The countdown wording comes from `getDailyCountdownLine` in
-`lib/calendar/countdown.ts`. It counts whole days rather than hours and
-minutes, because the image is posted once a day.
+The countdown comes from `getDailyCountdown` in `lib/calendar/countdown.ts`.
+It counts whole days rather than hours and minutes, because the image is
+posted once a day.
 
 ### The workflow
 
