@@ -47,13 +47,19 @@ function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
 
-function isShareAbortError(error: unknown): boolean {
+function isShareError(error: unknown, name: string): boolean {
   return (
     typeof error === "object" &&
     error !== null &&
     "name" in error &&
-    error.name === "AbortError"
+    error.name === name
   );
+}
+
+interface PreparedShare {
+  data: ShareData;
+  blob: Blob;
+  filename: string;
 }
 
 // ── Countdown display ─────────────────────────────────────────────────────────
@@ -109,6 +115,9 @@ export default function SemesterCard({
   const [isSharing, setIsSharing] = useState(false);
   const [isCaptureMode, setIsCaptureMode] = useState(false);
   const [shareFeedback, setShareFeedback] = useState<string | null>(null);
+  // Set when the image is ready but the browser refused to open the share
+  // sheet because the tap that started the capture had expired.
+  const [preparedShare, setPreparedShare] = useState<PreparedShare | null>(null);
   const captureRef = useRef<HTMLDivElement | null>(null);
 
   const triggerDownload = (blob: Blob, filename: string) => {
@@ -125,6 +134,7 @@ export default function SemesterCard({
 
     setIsSharing(true);
     setShareFeedback(null);
+    setPreparedShare(null);
 
     const filename = `usm-week-${getIsoDateInTimeZone(now, TIME_ZONE)}.png`;
 
@@ -167,8 +177,20 @@ export default function SemesterCard({
             await navigator.share(shareData);
             return;
           } catch (error) {
-            if (isShareAbortError(error)) return;
+            if (isShareError(error, "AbortError")) return;
+            // Browsers only open the share sheet shortly after a tap, and
+            // rendering the image can outlast that window (Chrome on Android
+            // allows about five seconds). Keep the image and let a second tap,
+            // which shares immediately, finish the job.
+            if (isShareError(error, "NotAllowedError")) {
+              setPreparedShare({ data: shareData, blob, filename });
+              return;
+            }
           }
+
+          triggerDownload(blob, filename);
+          setShareFeedback("Couldn't open the share sheet, so the image was downloaded.");
+          return;
         }
       }
 
@@ -179,6 +201,20 @@ export default function SemesterCard({
     } finally {
       setIsCaptureMode(false);
       setIsSharing(false);
+    }
+  };
+
+  const handlePreparedShare = async () => {
+    if (!preparedShare) return;
+
+    const { data, blob, filename } = preparedShare;
+    setPreparedShare(null);
+    try {
+      await navigator.share(data);
+    } catch (error) {
+      if (isShareError(error, "AbortError")) return;
+      triggerDownload(blob, filename);
+      setShareFeedback("Couldn't open the share sheet, so the image was downloaded.");
     }
   };
 
@@ -421,6 +457,17 @@ export default function SemesterCard({
                 </div>
               </div>
             </>
+          )}
+
+          {preparedShare && (
+            <button
+              type="button"
+              data-no-capture="true"
+              onClick={handlePreparedShare}
+              className="rounded-full bg-slate-900 px-4 py-2 font-sans text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+            >
+              Image ready — tap to share
+            </button>
           )}
 
           {shareFeedback && (
