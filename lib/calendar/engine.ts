@@ -179,6 +179,11 @@ export function getCalendarCountdownTarget(
   calendar: AcademicCalendar,
   info: CalendarInfo
 ): Date {
+  // Before the calendar starts, the first period stands in as the current one,
+  // so its "next" period is the second -- count down to the first instead.
+  if (info.phase === "pre") {
+    return isoDateToTimeZoneStart(calendar.periods[0].startDate, calendar.timezone);
+  }
   if (info.nextPeriodStart) return info.nextPeriodStart;
   if (calendar.nextAcademicYearStart) {
     return isoDateToTimeZoneStart(calendar.nextAcademicYearStart, calendar.timezone);

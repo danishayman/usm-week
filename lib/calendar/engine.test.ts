@@ -78,6 +78,14 @@ describe("getCalendarInfo", () => {
     expect(fallbackTarget.toISOString()).toBe("2026-09-27T16:00:00.000Z");
   });
 
+  it("counts down to the first period, not the second, before the calendar starts", () => {
+    const preInfo = getCalendarInfo(calendar, new Date("2025-09-01T12:00:00.000Z"));
+    expect(preInfo.phase).toBe("pre");
+
+    const target = getCalendarCountdownTarget(calendar, preInfo);
+    expect(target.toISOString()).toBe("2025-10-05T16:00:00.000Z");
+  });
+
   it("uses calendar timezone midnight for next period countdown target", () => {
     const teachingWeek7 = getCalendarInfo(
       calendar,
