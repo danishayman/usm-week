@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
 import { ImageResponse } from "next/og";
 
@@ -19,11 +20,18 @@ const size = { width: 1200, height: 675 };
 // previews use app/opengraph-image.tsx, which keeps its own revalidate.
 export const dynamic = "force-dynamic";
 
-// Same 192px icon as the Open Graph image, read relative to this module so the
-// file is traced into the serverless bundle.
-async function loadCrest(): Promise<string> {
-  const crest = await readFile(new URL("../crest.png", import.meta.url));
-  return `data:image/png;base64,${crest.toString("base64")}`;
+// Same 192px icon as the Open Graph image. Unlike that image, this route runs
+// on every request, so the file is read at runtime from a process.cwd() path,
+// the form Next's file tracing includes in the serverless bundle. A missing
+// crest drops the logo rather than failing the whole daily post.
+async function loadCrest(): Promise<string | null> {
+  try {
+    const crest = await readFile(join(process.cwd(), "app", "crest.png"));
+    return `data:image/png;base64,${crest.toString("base64")}`;
+  } catch (error) {
+    console.error("discord-image: could not read the crest", error);
+    return null;
+  }
 }
 
 export async function GET() {
@@ -66,14 +74,16 @@ export async function GET() {
           color: "#0f172a",
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={crestSrc}
-          width={130}
-          height={130}
-          alt=""
-          style={{ borderRadius: 999 }}
-        />
+        {crestSrc && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={crestSrc}
+            width={130}
+            height={130}
+            alt=""
+            style={{ borderRadius: 999 }}
+          />
+        )}
 
         <div
           style={{
