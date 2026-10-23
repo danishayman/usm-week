@@ -4,7 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { toPng } from "html-to-image";
 import { getIsoDateInTimeZone } from "@/lib/calendar/date";
-import { getHeadline, getSessionLabel } from "@/lib/calendar/headline";
+import {
+  getHeadline,
+  getProgressCaption,
+  getSessionLabel,
+} from "@/lib/calendar/headline";
 import { SITE_URL } from "@/lib/site";
 import {
   ACTIVITY_TYPE_METADATA,
@@ -12,6 +16,7 @@ import {
   getCalendarCountdownTarget,
   getCalendarInfo,
   getCountdown,
+  getCountdownLabel,
   getCalendarForDate,
   type CountdownParts,
 } from "@/lib/semester";
@@ -31,15 +36,6 @@ function formatDate(d: Date): string {
     year: "numeric",
     month: "long",
     day: "numeric",
-  });
-}
-
-function formatShortDate(d: Date): string {
-  return d.toLocaleDateString("en-MY", {
-    timeZone: TIME_ZONE,
-    day: "numeric",
-    month: "long",
-    year: "numeric",
   });
 }
 
@@ -162,10 +158,9 @@ export default function SemesterCard({
       const imageFile = new File([blob], filename, { type: "image/png" });
 
       if (typeof navigator.share === "function") {
-        const captureCaptionLine = `${semesterProgressLabel} is ${formattedProgressPercent}% complete.`;
         const shareData: ShareData = {
           title: "USM Week Snapshot",
-          text: `${captureCaptionLine}\n${SITE_URL}`,
+          text: `${progressCaption}\n${SITE_URL}`,
           files: [imageFile],
         };
         const canShareFiles =
@@ -251,13 +246,7 @@ export default function SemesterCard({
     return info.currentPeriod.label;
   })();
 
-  const countdownLabel = (() => {
-    if (isPre) return `Semester begins on ${formatShortDate(info.calendarStart)}`;
-    if (isPost) return `Ended on ${formatShortDate(info.calendarEnd)}`;
-    if (info.nextPeriod) return `${info.nextPeriod.label} starts in`;
-    if (CALENDAR.nextAcademicYearStart) return "Next academic year starts in";
-    return `${info.currentPeriod.label} ends in`;
-  })();
+  const countdownLabel = getCountdownLabel(CALENDAR, info);
 
   const headline = getHeadline(info);
   const semesterProgressLabel = getSessionLabel(
@@ -265,12 +254,9 @@ export default function SemesterCard({
     CALENDAR.academicYear
   );
   const progressPercent = Math.max(0, Math.min(100, info.progressPercent));
-  const formattedProgressPercent = progressPercent.toFixed(2);
+  const progressCaption = getProgressCaption(info, CALENDAR.academicYear);
 
-  const subLine = (() => {
-    if (isPre || isPost) return semesterProgressLabel;
-    return `${semesterProgressLabel} is ${formattedProgressPercent}% complete.`;
-  })();
+  const subLine = isPre || isPost ? semesterProgressLabel : progressCaption;
 
   return (
     <main className="relative min-h-screen flex flex-col items-center justify-center px-4 py-4">

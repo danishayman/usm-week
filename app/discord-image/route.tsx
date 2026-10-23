@@ -3,9 +3,18 @@ import { join } from "node:path";
 
 import { ImageResponse } from "next/og";
 
-import { getDailyCountdown } from "@/lib/calendar/countdown";
-import { getCalendarInfo } from "@/lib/calendar/engine";
-import { getHeadline, getSessionLabel } from "@/lib/calendar/headline";
+import { getCountdownLabel } from "@/lib/calendar/countdown";
+import {
+  getCalendarCountdownTarget,
+  getCalendarInfo,
+  getCountdown,
+  type CountdownParts,
+} from "@/lib/calendar/engine";
+import {
+  getHeadline,
+  getProgressCaption,
+  getSessionLabel,
+} from "@/lib/calendar/headline";
 import { getCalendarForDate } from "@/lib/calendar/loader";
 import {
   ACTIVITY_TYPE_METADATA,
@@ -18,25 +27,51 @@ import {
 // previews use app/opengraph-image.tsx, which keeps its own revalidate.
 export const dynamic = "force-dynamic";
 
+// The workflow posts this header's value (URI-encoded, since header values
+// must be ASCII) as the message text, so it always matches the image.
+const CAPTION_HEADER = "X-Share-Caption";
+
 const TIME_ZONE = "Asia/Kuala_Lumpur";
 
-// The card reproduces SemesterCard's share capture on a phone. Sizes below are
-// the page's CSS pixels (Tailwind's mobile values), scaled up so the PNG stays
-// sharp when Discord displays it.
+// The card reproduces SemesterCard's share capture on a 412px-wide phone.
+// Sizes below are the page's CSS pixels (Tailwind's mobile values), scaled up
+// so the PNG stays sharp when Discord displays it.
 const SCALE = 2.5;
 const px = (cssPixels: number) => cssPixels * SCALE;
-const CARD_WIDTH = 400;
 const FRAME_PADDING = 16;
+const CARD_WIDTH = 412 - 2 * 16 - 2 * FRAME_PADDING; // viewport, page px-4, frame
+const CARD_PADDING = 32;
+const CARD_INNER_WIDTH = CARD_WIDTH - 2 * CARD_PADDING;
 
-// Measured section heights, in CSS px.
-const LABEL_BLOCK_HEIGHT = 159; // crest, university name and the gap below
-const CARD_BASE_HEIGHT = 296; // the card with no progress bar or day count
-const PROGRESS_HEIGHT = 40;
-const DAYS_HEIGHT = 77;
-const EYEBROW_LINE_HEIGHT = 22;
-// Roughly how many eyebrow characters fit on one line of the card.
-const EYEBROW_CHARS_PER_LINE = 24;
+// Tailwind's line heights for the text sizes the card uses.
+const LINE_HEIGHT = {
+  xs: 16,
+  sm: 20,
+  lg: 28,
+  "2xl": 32,
+  "3xlTight": 37.5, // text-3xl leading-tight
+  "4xlNone": 36, // text-4xl leading-none
+};
 
+// Average advance per character, in CSS px, including letter spacing, for
+// estimating where text wraps. Geist Mono is monospaced at 0.6em; the Inter
+// figures were measured from rendered cards.
+const CHAR_WIDTH = {
+  date: 14 * 0.6,
+  eyebrow: 12.2,
+  headline: 14.1,
+  countdownLabel: 12 * 0.6 + 12 * 0.1,
+};
+const DATE_LEAD_WIDTH = 56; // "Today is " in Inter
+
+function lineCount(width: number): number {
+  // Words wrap before the box is full, so later lines hold a little less.
+  return width <= CARD_INNER_WIDTH
+    ? 1
+    : Math.ceil(width / (CARD_INNER_WIDTH * 0.85));
+}
+
+const SLATE_300 = "#cbd5e1";
 const SLATE_400 = "#94a3b8";
 const SLATE_500 = "#64748b";
 const SLATE_800 = "#1e293b";
@@ -53,7 +88,7 @@ const ACCENT_TEXT_COLORS: Record<string, string> = {
 const SANS = "Inter";
 const MONO = "Geist Mono";
 
-type FontWeight = 400 | 600 | 700 | 800;
+type FontWeight = 300 | 400 | 600 | 700 | 800;
 interface FontOption {
   name: string;
   data: ArrayBuffer;
@@ -62,6 +97,7 @@ interface FontOption {
 }
 
 const FONT_FACES: [string, FontWeight][] = [
+  [SANS, 300],
   [SANS, 400],
   [SANS, 600],
   [SANS, 700],
@@ -149,6 +185,102 @@ function Divider() {
   );
 }
 
+function pad(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+// SemesterCard's CountdownUnit, Separator and LiveCountdown.
+function CountdownUnit({
+  value,
+  unit,
+  colour,
+}: {
+  value: number;
+  unit: string;
+  colour: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        minWidth: px(52),
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          fontFamily: MONO,
+          fontSize: px(36),
+          fontWeight: 700,
+          lineHeight: 1,
+          color: colour,
+        }}
+      >
+        {pad(value)}
+      </div>
+      <div
+        style={{
+          display: "flex",
+          marginTop: px(6),
+          fontSize: px(12),
+          lineHeight: `${px(LINE_HEIGHT.xs)}px`,
+          fontWeight: 600,
+          letterSpacing: px(12 * 0.05),
+          color: SLATE_400,
+        }}
+      >
+        {unit.toUpperCase()}
+      </div>
+    </div>
+  );
+}
+
+function Separator() {
+  return (
+    <div
+      style={{
+        display: "flex",
+        marginBottom: px(20),
+        fontSize: px(24),
+        fontWeight: 300,
+        lineHeight: `${px(LINE_HEIGHT["2xl"])}px`,
+        color: SLATE_300,
+      }}
+    >
+      :
+    </div>
+  );
+}
+
+function Countdown({
+  parts,
+  colour,
+}: {
+  parts: CountdownParts;
+  colour: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+        gap: px(12),
+      }}
+    >
+      <CountdownUnit value={parts.days} unit="days" colour={colour} />
+      <Separator />
+      <CountdownUnit value={parts.hours} unit="hrs" colour={colour} />
+      <Separator />
+      <CountdownUnit value={parts.minutes} unit="min" colour={colour} />
+      <Separator />
+      <CountdownUnit value={parts.seconds} unit="sec" colour={colour} />
+    </div>
+  );
+}
+
 // In development, ?at=<ISO date> previews the card for another day, e.g.
 // /discord-image?at=2027-07-20 for the long break. Production ignores it.
 function resolveNow(request: Request): Date {
@@ -184,25 +316,50 @@ export async function GET(request: Request) {
   const headline = getHeadline(info);
   const session = getSessionLabel(info.termLabel, calendar.academicYear);
   const percent = Math.max(0, Math.min(100, info.progressPercent));
-  const subLine =
-    isPre || isPost ? session : `${session} is ${percent.toFixed(2)}% complete.`;
-  const countdown = getDailyCountdown(calendar, info, now);
+  const progressCaption = getProgressCaption(info, calendar.academicYear);
+  const subLine = isPre || isPost ? session : progressCaption;
+  const countdownLabel = getCountdownLabel(calendar, info);
+  const countdown = getCountdown(getCalendarCountdownTarget(calendar, info), now);
 
   const [fonts, crestSrc] = await Promise.all([loadFonts(), loadCrest()]);
 
-  // Satori needs a fixed height, so it is built from the measured height of
-  // each section (CSS px) to keep the frame hugging the card as the capture
-  // does. Content is centred, so any small error splits evenly top and bottom.
+  const todayLabel = formatDate(now);
   const showProgress = !isPre && !isPost;
-  const showDays = countdown.days !== null;
-  const eyebrowWraps = headlineActivity.length > EYEBROW_CHARS_PER_LINE;
-  const cssHeight =
-    FRAME_PADDING * 2 +
-    LABEL_BLOCK_HEIGHT +
-    CARD_BASE_HEIGHT +
-    (eyebrowWraps ? EYEBROW_LINE_HEIGHT : 0) +
-    (showProgress ? PROGRESS_HEIGHT : 0) +
-    (showDays ? DAYS_HEIGHT : 0);
+  const showCountdown = !isPost;
+
+  // Satori needs a fixed height, so it is added up from the layout below (CSS
+  // px), estimating where text wraps, to keep the frame hugging the card as
+  // the capture does. Content is centred, so a small error splits evenly
+  // above and below.
+  const dateLines = lineCount(
+    DATE_LEAD_WIDTH + todayLabel.length * CHAR_WIDTH.date
+  );
+  const labelBlock = 112 + 8 + LINE_HEIGHT.xs + 24;
+  const activityBlock =
+    4 +
+    LINE_HEIGHT.lg * lineCount(headlineActivity.length * CHAR_WIDTH.eyebrow) +
+    8 +
+    LINE_HEIGHT["3xlTight"] * lineCount(headline.length * CHAR_WIDTH.headline) +
+    (showProgress ? 8 + 4 + 22 + 2 * 3 : 0) +
+    8 +
+    LINE_HEIGHT.xs +
+    4;
+  const countdownBlock =
+    8 +
+    LINE_HEIGHT.xs *
+      lineCount(countdownLabel.length * CHAR_WIDTH.countdownLabel) +
+    (showCountdown ? 20 + LINE_HEIGHT["4xlNone"] + 6 + LINE_HEIGHT.xs : 0) +
+    8;
+  const divider = 20 + 1 + 20;
+  const card =
+    2 * 1 +
+    2 * CARD_PADDING +
+    LINE_HEIGHT.sm * dateLines +
+    divider +
+    activityBlock +
+    divider +
+    countdownBlock;
+  const cssHeight = 2 * FRAME_PADDING + labelBlock + card;
 
   return new ImageResponse(
     (
@@ -250,6 +407,7 @@ export async function GET(request: Request) {
             style={{
               display: "flex",
               fontSize: px(12),
+              lineHeight: `${px(LINE_HEIGHT.xs)}px`,
               fontWeight: 600,
               letterSpacing: px(12 * 0.1),
               color: SLATE_800,
@@ -266,7 +424,7 @@ export async function GET(request: Request) {
             flexDirection: "column",
             alignItems: "center",
             width: px(CARD_WIDTH),
-            padding: px(32),
+            padding: px(CARD_PADDING),
             gap: px(20),
             backgroundColor: "#ffffff",
             border: `${px(1)}px solid ${GRAY_200}`,
@@ -274,12 +432,22 @@ export async function GET(request: Request) {
           }}
         >
           {/* Date */}
-          <div style={{ display: "flex", fontSize: px(14), color: SLATE_500 }}>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              fontSize: px(14),
+              lineHeight: `${px(LINE_HEIGHT.sm)}px`,
+              color: SLATE_500,
+              textAlign: "center",
+            }}
+          >
             <span>Today is&nbsp;</span>
             <span
               style={{ fontFamily: MONO, fontWeight: 600, color: SLATE_800 }}
             >
-              {formatDate(now)}
+              {todayLabel}
             </span>
           </div>
 
@@ -300,6 +468,7 @@ export async function GET(request: Request) {
               style={{
                 display: "flex",
                 fontSize: px(18),
+                lineHeight: `${px(LINE_HEIGHT.lg)}px`,
                 fontWeight: 700,
                 letterSpacing: px(18 * 0.1),
                 justifyContent: "center",
@@ -315,7 +484,7 @@ export async function GET(request: Request) {
                 display: "flex",
                 fontSize: px(30),
                 fontWeight: 800,
-                lineHeight: 1.25,
+                lineHeight: `${px(LINE_HEIGHT["3xlTight"])}px`,
                 letterSpacing: px(30 * -0.025),
                 justifyContent: "center",
                 textAlign: "center",
@@ -355,8 +524,11 @@ export async function GET(request: Request) {
                 justifyContent: "center",
                 fontFamily: MONO,
                 fontSize: px(12),
+                lineHeight: `${px(LINE_HEIGHT.xs)}px`,
                 color: SLATE_500,
                 textAlign: "center",
+                // whitespace-nowrap on the page
+                whiteSpace: "nowrap",
               }}
             >
               {subLine}
@@ -365,7 +537,7 @@ export async function GET(request: Request) {
 
           <Divider />
 
-          {/* Countdown: whole days, since the card is posted once a day */}
+          {/* Countdown, as it stands at the moment the card is rendered */}
           <div
             style={{
               display: "flex",
@@ -381,6 +553,7 @@ export async function GET(request: Request) {
                 display: "flex",
                 fontFamily: MONO,
                 fontSize: px(12),
+                lineHeight: `${px(LINE_HEIGHT.xs)}px`,
                 fontWeight: 600,
                 justifyContent: "center",
                 letterSpacing: px(12 * 0.1),
@@ -388,43 +561,10 @@ export async function GET(request: Request) {
                 textAlign: "center",
               }}
             >
-              {countdown.label.toUpperCase()}
+              {countdownLabel.toUpperCase()}
             </div>
 
-            {showDays && (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    fontFamily: MONO,
-                    fontSize: px(36),
-                    fontWeight: 700,
-                    lineHeight: 1,
-                    color: accentHex,
-                  }}
-                >
-                  {String(countdown.days).padStart(2, "0")}
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    marginTop: px(6),
-                    fontSize: px(12),
-                    fontWeight: 600,
-                    letterSpacing: px(12 * 0.05),
-                    color: SLATE_400,
-                  }}
-                >
-                  {countdown.days === 1 ? "DAY" : "DAYS"}
-                </div>
-              </div>
-            )}
+            {showCountdown && <Countdown parts={countdown} colour={accentHex} />}
           </div>
         </div>
       </div>
@@ -433,8 +573,11 @@ export async function GET(request: Request) {
       width: px(CARD_WIDTH + FRAME_PADDING * 2),
       height: px(cssHeight),
       fonts,
-      // ImageResponse defaults to a year-long immutable cache header.
-      headers: { "Cache-Control": "no-store, max-age=0" },
+      headers: {
+        // ImageResponse defaults to a year-long immutable cache header.
+        "Cache-Control": "no-store, max-age=0",
+        [CAPTION_HEADER]: encodeURIComponent(progressCaption),
+      },
     }
   );
 }

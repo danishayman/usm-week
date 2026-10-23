@@ -12,7 +12,7 @@ on:
       image_url:
         description: "Card URL to fetch (defaults to production)"
         required: false
-        default: "https://usm.danishaiman.com/discord-image"
+        default: "https://usm-week.netlify.app/discord-image"
 
 permissions: {}
 
@@ -27,13 +27,13 @@ jobs:
     steps:
       - name: Fetch the card
         env:
-          IMAGE_URL: ${{ inputs.image_url || 'https://usm.danishaiman.com/discord-image' }}
+          IMAGE_URL: ${{ inputs.image_url || 'https://usm-week.netlify.app/discord-image' }}
         run: |
           set -euo pipefail
 
           # The route is no-store already; the query string also keeps any
           # intermediate cache from answering with an older card.
-          status=$(curl -sS -o card.png -w '%{http_code}' \
+          status=$(curl -sS -o card.png -D card-headers.txt -w '%{http_code}' \
             "${IMAGE_URL}?t=$(date +%s)")
 
           if [ "$status" != "200" ]; then
@@ -54,6 +54,20 @@ jobs:
           fi
 
           echo "Fetched card.png ($bytes bytes)"
+
+          # The route sends the share caption ("Semester I 2026/2027 is 24.66%
+          # complete.") URI-encoded in a header, computed at the same moment as
+          # the image. Fall back to the site name if it is ever missing.
+          encoded=$(grep -i '^x-share-caption:' card-headers.txt \
+            | head -n 1 | cut -d: -f2- | tr -d '\r' | sed 's/^[[:space:]]*//' || true)
+          if [ -n "$encoded" ]; then
+            python3 -c 'import sys, urllib.parse; print(urllib.parse.unquote(sys.argv[1]))' \
+              "$encoded" > caption.txt
+          else
+            echo "::warning::Card response had no X-Share-Caption header"
+            echo "USM Week" > caption.txt
+          fi
+          echo "Caption: $(cat caption.txt)"
 
       - name: Post to Discord
         env:
@@ -80,16 +94,16 @@ jobs:
           done
 
           today=$(TZ=Asia/Kuala_Lumpur date '+%Y-%m-%d')
-          label=$(TZ=Asia/Kuala_Lumpur date '+%A, %-d %B %Y')
           filename="usm-week-${today}.png"
 
-          # The image goes up as an attachment, never as a link: Discord caches
-          # unfurled images, so a linked card would keep showing an old day.
-          # The site link is wrapped in <> so it does not unfurl its own
+          # The message text is the page's share text: the caption, then the
+          # site. The image goes up as an attachment, never as a link: Discord
+          # caches unfurled images, so a linked card would keep showing an old
+          # day. The site link is wrapped in <> so it does not unfurl its own
           # preview image under the card, and no mentions are ever parsed.
           jq -n \
-            --arg content "**USM Week** — ${label}
-          <https://usm.danishaiman.com>" \
+            --arg content "$(cat caption.txt)
+          <https://usm-week.netlify.app>" \
             --arg filename "$filename" \
             '{
               content: $content,

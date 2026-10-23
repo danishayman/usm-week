@@ -8,8 +8,7 @@ export {
   getCalendarInfo,
   getCountdown,
 } from "@/lib/calendar/engine";
-export { getDailyCountdown } from "@/lib/calendar/countdown";
-export type { DailyCountdown } from "@/lib/calendar/countdown";
+export { getCountdownLabel } from "@/lib/calendar/countdown";
 export {
   getCalendarForDate,
   getDefaultCalendar,

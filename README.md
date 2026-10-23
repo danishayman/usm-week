@@ -63,23 +63,26 @@ When updating dates in an existing file, edit it and run steps 3 and 4.
 ## Daily Discord Card
 
 Every day just after 12:00am Malaysia time, a GitHub Actions workflow posts a
-card to one or more Discord channels showing the current week, semester
-progress and a day-level countdown to the next milestone.
+card to one or more Discord channels. The card looks like the page's share
+image on a phone: the current week, semester progress, and the countdown to
+the next milestone.
 
 ### The image route
 
-`/discord-image` (`app/discord-image/route.tsx`) renders the card as a
-portrait PNG on the server that matches the share image from the page on a
-phone, using the page's Inter and Geist Mono fonts from Google Fonts. It is
-rendered fresh on every request (`no-store`), so it always shows today's
-values. Preview it locally at
+`/discord-image` (`app/discord-image/route.tsx`) renders the card on the
+server as a portrait PNG laid out like the page on a 412px-wide phone, using
+the page's Inter and Geist Mono fonts from Google Fonts. It is rendered fresh
+on every request (`no-store`), so it always shows the current values. The
+countdown shows days, hours, minutes and seconds as they stood when the card
+was rendered. Preview it locally at
 [http://localhost:3000/discord-image](http://localhost:3000/discord-image).
 Under `npm run dev` only, add `?at=<date>` to preview another day, for example
 `/discord-image?at=2027-07-20`.
 
-The countdown comes from `getDailyCountdown` in `lib/calendar/countdown.ts`.
-It counts whole days rather than hours and minutes, because the image is
-posted once a day.
+The page and the card share their wording: `getCountdownLabel` in
+`lib/calendar/countdown.ts` and `getProgressCaption` in
+`lib/calendar/headline.ts`. The route also returns the caption (for example
+"Semester I 2026/2027 is 24.66% complete.") in an `X-Share-Caption` header.
 
 ### The workflow
 
@@ -88,8 +91,9 @@ GitHub Actions cron is in UTC, and 16:00 UTC is 12:00am in Kuala Lumpur
 (UTC+8) on the following day. Scheduled runs are best-effort and often start
 several minutes late.
 
-The workflow downloads the card from the live site and uploads it to each
-webhook as a file attachment. It does not send a link, because Discord caches
+The workflow downloads the card from https://usm-week.netlify.app and uploads
+it to each webhook as a file attachment. The message text is the same as the
+page's share text: the caption from `X-Share-Caption`, then the site link. It does not send a link, because Discord caches
 link previews and would keep showing an old card. It fails if the card can't be
 downloaded or isn't a valid PNG. If one webhook fails, for example because it
 was deleted, the others still get the card, and the run is marked as failed so

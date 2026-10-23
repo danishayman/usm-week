@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { getCalendarInfo } from "@/lib/calendar/engine";
-import { getHeadline } from "@/lib/calendar/headline";
+import { getHeadline, getProgressCaption } from "@/lib/calendar/headline";
 import { getCalendarForDate } from "@/lib/calendar/loader";
 
 function headlineOn(isoDate: string): string {
@@ -41,5 +41,23 @@ describe("getHeadline", () => {
 
   it("covers the ends of the calendar", () => {
     expect(headlineOn("2030-01-01")).toBe("Until Next Year");
+  });
+});
+
+describe("getProgressCaption", () => {
+  function captionAt(iso: string): string {
+    const when = new Date(iso);
+    const calendar = getCalendarForDate(when);
+    return getProgressCaption(getCalendarInfo(calendar, when), calendar.academicYear);
+  }
+
+  it("states the session and progress to two decimal places", () => {
+    // Midnight in Kuala Lumpur as Semester I starts, and as its teaching ends.
+    expect(captionAt("2026-09-27T16:00:00.000Z")).toBe(
+      "Semester I 2026/2027 is 0.00% complete."
+    );
+    expect(captionAt("2027-01-10T16:00:00.000Z")).toBe(
+      "Semester I 2026/2027 is 100.00% complete."
+    );
   });
 });

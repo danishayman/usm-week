@@ -39,3 +39,17 @@ export function getSessionLabel(
     ? `${termLabel} ${session}`
     : termLabel;
 }
+
+/**
+ * e.g. "Semester I 2026/2027 is 24.66% complete." -- the page's sub-line, the
+ * caption it shares, and the Discord card's message text.
+ */
+export function getProgressCaption(
+  info: CalendarInfo,
+  academicYear: string
+): string {
+  const percent = Math.max(0, Math.min(100, info.progressPercent));
+  return `${getSessionLabel(info.termLabel, academicYear)} is ${percent.toFixed(
+    2
+  )}% complete.`;
+}
